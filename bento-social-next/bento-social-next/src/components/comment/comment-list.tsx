@@ -118,76 +118,59 @@ export default function CommentList({ postId }: CommentListProps) {
       ) : (
         <div className="flex flex-col gap-4">
           {comments.map((comment) => (
-            <div key={comment.id} className="flex flex-col gap-3">
-              <CommentItem
-                data={comment}
-                onReply={setParentComment}
-                onCommentUpdated={handleCommentUpdated}
-                onCommentDeleted={handleCommentDeleted}
-                openMoreOptionsId={openMoreOptionsId}
-                setOpenMoreOptionsId={setOpenMoreOptionsId}
-              />
+            <div key={comment.id} className="flex flex-col">
+              <div className="mb-1">
+                <CommentItem
+                  data={comment}
+                  onReply={setParentComment}
+                  onCommentUpdated={handleCommentUpdated}
+                  onCommentDeleted={handleCommentDeleted}
+                  openMoreOptionsId={openMoreOptionsId}
+                  setOpenMoreOptionsId={setOpenMoreOptionsId}
+                />
+              </div>
 
               {comment.replyCount > 0 && (
-                <div className="flex items-center ml-10 mt-2 gap-2">
-                  <button
-                    onClick={() => toggleReplies(comment.id)}
-                    className="flex items-center gap-2 text-blue-500 hover:text-blue-600 transition-colors"
-                  >
-                    {openReplies[comment.id] ? (
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M18 15l-6-6-6 6"/>
-                      </svg>
-                    ) : (
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M6 9l6 6 6-6"/>
-                      </svg>
-                    )}
-                    <Typography level="captionsm" className="text-blue-500 hover:text-blue-600">
-                      {openReplies[comment.id]
-                        ? `Ẩn trả lời`
-                        : `Xem ${comment.replyCount} trả lời`}
-                    </Typography>
-                  </button>
-                </div>
+                <button
+                  onClick={() => toggleReplies(comment.id)}
+                  className="ml-4 text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1.5"
+                >
+                  <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M2 5a2 2 0 012-2h12a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V5zm3.293 1.293a1 1 0 011.414 0L10 9.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+                  </svg>
+                  {openReplies[comment.id] ? 'Ẩn phản hồi' : `${comment.replyCount} phản hồi`}
+                </button>
               )}
 
-              {loadingReplies[comment.id] ? (
-                <div className="ml-10 mt-2 flex items-center gap-2 text-gray-500 pl-4">
-                  <svg className="animate-spin" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="12" y1="2" x2="12" y2="6"/>
-                    <line x1="12" y1="18" x2="12" y2="22"/>
-                    <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/>
-                    <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/>
-                    <line x1="2" y1="12" x2="6" y2="12"/>
-                    <line x1="18" y1="12" x2="22" y2="12"/>
-                    <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/>
-                    <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/>
-                  </svg>
-                  <Typography level="base2m" className="text-gray-500">
-                    Đang tải trả lời...
-                  </Typography>
+              {openReplies[comment.id] && (
+                <div className="ml-8 mt-2">
+                  {loadingReplies[comment.id] ? (
+                    <div className="flex items-center gap-2 text-gray-500">
+                      <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
+                      <span className="text-sm">Đang tải phản hồi...</span>
+                    </div>
+                  ) : (
+                    comment.replies && comment.replies.length > 0 && (
+                      <div className="pl-4 border-l border-gray-200 flex flex-col gap-2">
+                        {comment.replies.map((reply) => (
+                          <CommentItem
+                            key={reply.id}
+                            data={reply}
+                            isReply
+                            onCommentUpdated={handleCommentUpdated}
+                            onCommentDeleted={handleCommentDeleted}
+                            openMoreOptionsId={openMoreOptionsId}
+                            setOpenMoreOptionsId={setOpenMoreOptionsId}
+                          />
+                        ))}
+                      </div>
+                    )
+                  )}
                 </div>
-              ) : (
-                openReplies[comment.id] && comment.replies && comment.replies.length > 0 && (
-                  <div className="ml-10 pl-4 border-l border-gray-200 flex flex-col gap-3">
-                    {comment.replies.map((reply) => (
-                      <CommentItem
-                        key={reply.id}
-                        data={reply}
-                        isReply
-                        onCommentUpdated={handleCommentUpdated}
-                        onCommentDeleted={handleCommentDeleted}
-                        openMoreOptionsId={openMoreOptionsId}
-                        setOpenMoreOptionsId={setOpenMoreOptionsId}
-                      />
-                    ))}
-                  </div>
-                )
               )}
 
               {parentComment?.id === comment.id && (
-                <div className="ml-10">
+                <div className="ml-8 mt-2">
                   <CommentInput
                     commentId={comment.id}
                     parentComment={parentComment}
