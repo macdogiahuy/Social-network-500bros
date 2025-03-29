@@ -6,9 +6,14 @@ export function authMiddleware(introspector: ITokenIntrospect): Handler {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
       // 1. Get token from header
-      const token = req.headers.authorization?.split(' ')[1];
-      if (!token) {
-        throw ErrTokenInvalid.withLog('Token is missing');
+      const authHeader = req.headers.authorization;
+      if (!authHeader) {
+        throw ErrTokenInvalid.withLog('Authorization header is missing');
+      }
+
+      const [scheme, token] = authHeader.split(' ');
+      if (!token || scheme.toLowerCase() !== 'bearer') {
+        throw ErrTokenInvalid.withLog('Invalid token format. Use: Bearer <token>');
       }
 
       // 2. Introspect token

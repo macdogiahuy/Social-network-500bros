@@ -21,8 +21,14 @@ class JwtTokenService implements ITokenProvider {
   async verifyToken(token: string): Promise<TokenPayload | null> {
     try {
       const decoded = jwt.verify(token, this.secretKey) as TokenPayload;
+      if (!decoded || !decoded.sub || !decoded.role) {
+        return null;
+      }
       return decoded;
     } catch (error) {
+      if (error instanceof jwt.JsonWebTokenError) {
+        console.error('JWT Verification Error:', error.message);
+      }
       return null;
     }
   }

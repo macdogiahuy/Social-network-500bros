@@ -41,26 +41,49 @@ export class UserUseCase implements IUserUseCase {
 
   async login(data: UserLoginDTO): Promise<string> {
     const dto = userLoginDTOSchema.parse(data);
+    let authenticatedUser: User | null = null;
 
-    // 1. Find user with username from DTO
-    const user = await this.repository.findByCond({ username: dto.username });
-    if (!user) {
-      throw AppError.from(ErrInvalidUsernameAndPassword, 400).withLog('Username not found');
+    try {
+      // 1. Find user with username from DTO
+      const user = await this.repository.findByCond({ username: dto.username });
+      if (!user) {
+        throw AppError.from(ErrInvalidUsernameAndPassword, 400)
+          .withLog(`Login failed: Username '${dto.username}' not found`);
+      }
+
+      // 2. Check user status first
+      if (user.status === Status.DELETED || user.status === Status.INACTIVE) {
+        throw AppError.from(ErrUserInactivated, 400)
+          .withLog(`Login failed: User '${dto.username}' is ${user.status.toLowerCase()}`);
+      }
+
+      // 3. Check password
+      const isMatch = await bcrypt.compare(`${dto.password}.${user.salt}`, user.password);
+      if (!isMatch) {
+        throw AppError.from(ErrInvalidUsernameAndPassword, 400)
+          .withLog(`Login failed: Invalid password for user '${dto.username}'`);
+      }
+
+      authenticatedUser = user;
+    } catch (error) {
+      if (error instanceof AppError) {
+        throw error;
+      }
+      console.error('Login error:', error);
+      throw AppError.from(ErrInvalidUsernameAndPassword, 400)
+        .withLog('Login failed: Internal server error');
     }
 
-    // 2. Check password
-    const isMatch = await bcrypt.compare(`${dto.password}.${user.salt}`, user.password);
-    if (!isMatch) {
-      throw AppError.from(ErrInvalidUsernameAndPassword, 400).withLog('Password is incorrect');
+    // 4. Generate and return token
+    if (!authenticatedUser) {
+      throw AppError.from(ErrInvalidUsernameAndPassword, 400)
+        .withLog('Login failed: User authentication error');
     }
 
-    if (user.status === Status.DELETED || user.status === Status.INACTIVE) {
-      throw AppError.from(ErrUserInactivated, 400);
-    }
-
-    // 3. Return token
-    const role = user.role;
-    const token = jwtProvider.generateToken({ sub: user.id, role });
+    const token = jwtProvider.generateToken({
+      sub: authenticatedUser.id,
+      role: authenticatedUser.role
+    });
     return token;
   }
 

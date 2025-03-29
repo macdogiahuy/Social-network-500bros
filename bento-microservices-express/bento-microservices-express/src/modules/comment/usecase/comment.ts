@@ -1,5 +1,4 @@
 import { IEventPublisher } from '@shared/components/redis-pubsub/interface';
-
 import { PostCommentDeletedEvent, PostCommentedEvent } from '@shared/event/post.evt';
 import { IAuthorRpc, IPostRpc, Requester } from '@shared/interface';
 import { Paginated, PagingDTO, PublicUser } from '@shared/model';
@@ -120,10 +119,10 @@ export class CommentUsecase implements ICommentUseCase {
 
     const finalResult = result.data.map((item) => ({
       ...item,
-      user: userMap[item.userId],
+      author: userMap[item.userId],
       children: (repliesMap[item.id] || []).map((reply) => ({
         ...reply,
-        user: userMap[reply.userId]
+        author: userMap[reply.userId]
       }))
     }));
 
