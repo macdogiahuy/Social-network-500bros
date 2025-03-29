@@ -11,28 +11,28 @@ A full-stack social network application with microservices architecture.
 
 ### Backend Setup
 
-1. Navigate to the backend directory:
+1. Install Docker and Docker Compose if not already installed:
+   - [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Windows/Mac)
+   - [Docker Engine](https://docs.docker.com/engine/install/) (Linux)
+
+2. Navigate to the backend directory:
 ```bash
 cd bento-microservices-express/bento-microservices-express
 ```
 
-2. Install dependencies:
+3. Start the database and Redis services:
+```bash
+docker-compose up -d
+```
+This will automatically:
+- Start MySQL server on port 3307
+- Start Redis server on port 6379
+- Create and initialize the database with existing data
+- Set up all required configurations
+
+4. Install dependencies:
 ```bash
 npm install
-```
-
-3. Set up the database:
-```bash
-# Create MySQL database
-mysql -u root -p
-```
-```sql
-CREATE DATABASE social_network;
-```
-
-4. Import database dump:
-```bash
-mysql -u root -p social_network < ../../data/social_network_dump.sql
 ```
 
 5. Set up environment variables:
