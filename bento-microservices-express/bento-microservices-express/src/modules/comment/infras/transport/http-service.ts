@@ -9,7 +9,11 @@ export class CommentHttpService {
   constructor(private readonly useCase: ICommentUseCase) {}
 
   async listCommentAPI(req: Request, res: Response) {
-    const dto: CommentCondDTO = { postId: req.params.id, ...req.query };
+    const dto: CommentCondDTO = {
+      postId: req.params.id,
+      parentId: req.path.includes('/replies') ? req.params.id : null,
+      ...req.query
+    };
 
     const cond = commentCondDTOSchema.parse(dto);
     const paging = pagingDTOSchema.parse(req.query);

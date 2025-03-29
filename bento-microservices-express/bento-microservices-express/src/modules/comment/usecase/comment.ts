@@ -101,7 +101,13 @@ export class CommentUsecase implements ICommentUseCase {
     if (commentIds.length === 0) {
       return result;
     }
-    const replies = await this.repository.findByIds(commentIds, 'parent_id', 3);
+
+    // Only fetch replies if we're listing top-level comments (no parentId)
+    let replies: Comment[] = [];
+    if (!dto.parentId) {
+      replies = await this.repository.findByIds(commentIds, 'parent_id', 3);
+    }
+
     const repliesMap: Record<string, Comment[]> = {};
     replies.forEach((reply) => {
       if (!repliesMap[reply.parentId!]) {
@@ -117,14 +123,25 @@ export class CommentUsecase implements ICommentUseCase {
       userMap[user.id] = user;
     });
 
-    const finalResult = result.data.map((item) => ({
-      ...item,
-      author: userMap[item.userId],
-      children: (repliesMap[item.id] || []).map((reply) => ({
-        ...reply,
-        author: userMap[reply.userId]
-      }))
-    }));
+    const finalResult = result.data.map((item) => {
+      const commentData = {
+        ...item,
+        author: userMap[item.userId],
+      };
+      
+      // Only include replies array for top-level comments
+      if (!dto.parentId) {
+        return {
+          ...commentData,
+          replies: (repliesMap[item.id] || []).map((reply) => ({
+            ...reply,
+            author: userMap[reply.userId]
+          }))
+        };
+      }
+      
+      return commentData;
+    });
 
     return {
       ...result,
