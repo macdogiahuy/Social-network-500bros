@@ -20,6 +20,7 @@ export default function CommentList({ postId }: CommentListProps) {
     fullname: string;
   } | null>(null);
   const [openReplies, setOpenReplies] = useState<Record<string, boolean>>({});
+  const [loadingReplies, setLoadingReplies] = useState<Record<string, boolean>>({});
   const [openMoreOptionsId, setOpenMoreOptionsId] = useState<string | null>(null);
 
   const fetchComments = async () => {
@@ -41,25 +42,46 @@ export default function CommentList({ postId }: CommentListProps) {
   };
 
   const toggleReplies = async (commentId: string) => {
-    if (!openReplies[commentId]) {
-      try {
-        const response = await getReplies(commentId);
-        console.log('Replies response:', response); // Debug log
-
-        setComments((prevComments) =>
-          prevComments.map((c) =>
-            c.id === commentId ? { ...c, replies: response.data || [] } : c
-          )
-        );
-      } catch (err) {
-        console.error('Lỗi khi tải trả lời:', err);
-      }
+    // If closing, just toggle state
+    if (openReplies[commentId]) {
+      setOpenReplies((prev) => ({
+        ...prev,
+        [commentId]: false,
+      }));
+      return;
     }
 
-    setOpenReplies((prev) => ({
-      ...prev,
-      [commentId]: !prev[commentId],
-    }));
+    // If opening, fetch replies
+    try {
+      setLoadingReplies((prev) => ({
+        ...prev,
+        [commentId]: true,
+      }));
+
+      const response = await getReplies(commentId);
+      
+      if (response.data && response.data.length > 0) {
+        setComments((prevComments) =>
+          prevComments.map((c) =>
+            c.id === commentId ? { ...c, replies: response.data } : c
+          )
+        );
+      } else {
+        console.log('No replies found for comment:', commentId);
+      }
+
+      setOpenReplies((prev) => ({
+        ...prev,
+        [commentId]: true,
+      }));
+    } catch (err) {
+      console.error('Lỗi khi tải trả lời:', err);
+    } finally {
+      setLoadingReplies((prev) => ({
+        ...prev,
+        [commentId]: false,
+      }));
+    }
   };
 
   const handleCommentSuccess = () => {
@@ -138,20 +160,28 @@ export default function CommentList({ postId }: CommentListProps) {
                 </button>
               )}
 
-              {openReplies[comment.id] && comment.replies && comment.replies.length > 0 && (
-                <div className="ml-10 flex flex-col gap-3">
-                  {comment.replies.map((reply) => (
-                    <CommentItem
-                      key={reply.id}
-                      data={reply}
-                      isReply
-                      onCommentUpdated={handleCommentUpdated}
-                      onCommentDeleted={handleCommentDeleted}
-                      openMoreOptionsId={openMoreOptionsId}
-                      setOpenMoreOptionsId={setOpenMoreOptionsId}
-                    />
-                  ))}
+              {loadingReplies[comment.id] ? (
+                <div className="ml-10 mt-2">
+                  <Typography level="base2m" className="text-tertiary">
+                    Đang tải trả lời...
+                  </Typography>
                 </div>
+              ) : (
+                openReplies[comment.id] && comment.replies && comment.replies.length > 0 && (
+                  <div className="ml-10 flex flex-col gap-3">
+                    {comment.replies.map((reply) => (
+                      <CommentItem
+                        key={reply.id}
+                        data={reply}
+                        isReply
+                        onCommentUpdated={handleCommentUpdated}
+                        onCommentDeleted={handleCommentDeleted}
+                        openMoreOptionsId={openMoreOptionsId}
+                        setOpenMoreOptionsId={setOpenMoreOptionsId}
+                      />
+                    ))}
+                  </div>
+                )
               )}
 
               {parentComment?.id === comment.id && (
