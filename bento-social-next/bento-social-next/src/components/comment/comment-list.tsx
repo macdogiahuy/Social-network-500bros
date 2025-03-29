@@ -20,9 +20,7 @@ export default function CommentList({ postId }: CommentListProps) {
     fullname: string;
   } | null>(null);
   const [openReplies, setOpenReplies] = useState<Record<string, boolean>>({});
-  const [openMoreOptionsId, setOpenMoreOptionsId] = useState<string | null>(
-    null
-  );
+  const [openMoreOptionsId, setOpenMoreOptionsId] = useState<string | null>(null);
 
   const fetchComments = async () => {
     try {
@@ -43,26 +41,21 @@ export default function CommentList({ postId }: CommentListProps) {
   };
 
   const toggleReplies = async (commentId: string) => {
-    // Nếu đang đóng -> mở và fetch replies
     if (!openReplies[commentId]) {
       try {
-        const comment = comments.find((c) => c.id === commentId);
-        if (comment && (!comment.replies?.length) && comment.replyCount > 0) {
-          const response = await getReplies(commentId);
+        const response = await getReplies(commentId);
+        console.log('Replies response:', response); // Debug log
 
-          // Cập nhật comment có replies mới
-          setComments((prevComments) =>
-            prevComments.map((c) =>
-              c.id === commentId ? { ...c, replies: response.data || [] } : c
-            )
-          );
-        }
+        setComments((prevComments) =>
+          prevComments.map((c) =>
+            c.id === commentId ? { ...c, replies: response.data || [] } : c
+          )
+        );
       } catch (err) {
         console.error('Lỗi khi tải trả lời:', err);
       }
     }
 
-    // Toggle trạng thái mở/đóng
     setOpenReplies((prev) => ({
       ...prev,
       [commentId]: !prev[commentId],
@@ -74,13 +67,10 @@ export default function CommentList({ postId }: CommentListProps) {
   };
 
   const handleReplyAdded = (commentId: string) => {
-    // Mở phần replies sau khi thêm reply mới
     setOpenReplies((prev) => ({
       ...prev,
       [commentId]: true,
     }));
-
-    // Refresh lại danh sách comment
     fetchComments();
   };
 
