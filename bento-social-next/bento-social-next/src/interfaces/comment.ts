@@ -1,20 +1,20 @@
-import { User } from './user';
+import { IUserSimple } from './user';
 
 export interface ICommment {
   id: string;
   content: string;
-  author: User;
+  author: IUserSimple;
   createdAt: string;
   likedCount: number;
   hasLiked: boolean;
   replyCount: number;
-  replies: IChilrenComment[];
+  replies?: IChildComment[];
 }
 
-export interface IChilrenComment {
+export interface IChildComment {
   id: string;
   content: string;
-  author: User;
+  author: IUserSimple;
   createdAt: string;
   parentId: string;
   likedCount: number;

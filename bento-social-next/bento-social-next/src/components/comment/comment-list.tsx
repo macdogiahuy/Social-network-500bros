@@ -29,7 +29,11 @@ export default function CommentList({ postId }: CommentListProps) {
       setLoading(true);
       setError(null);
       const response = await getComments(postId);
-      setComments(response.data || []);
+      const commentsWithReplies = (response.data || []).map(comment => ({
+        ...comment,
+        replies: comment.replies || []
+      }));
+      setComments(commentsWithReplies);
     } catch (err) {
       console.error('Lỗi khi tải bình luận:', err);
       setError('Không thể tải bình luận. Vui lòng thử lại sau.');
@@ -43,7 +47,7 @@ export default function CommentList({ postId }: CommentListProps) {
     if (!openReplies[commentId]) {
       try {
         const comment = comments.find((c) => c.id === commentId);
-        if (comment && !comment.replies.length && comment.replyCount > 0) {
+        if (comment && (!comment.replies?.length) && comment.replyCount > 0) {
           const response = await getReplies(commentId);
 
           // Cập nhật comment có replies mới
@@ -144,7 +148,7 @@ export default function CommentList({ postId }: CommentListProps) {
                 </button>
               )}
 
-              {openReplies[comment.id] && comment.replies.length > 0 && (
+              {openReplies[comment.id] && comment.replies && comment.replies.length > 0 && (
                 <div className="ml-10 flex flex-col gap-3">
                   {comment.replies.map((reply) => (
                     <CommentItem
