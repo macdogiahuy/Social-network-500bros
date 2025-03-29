@@ -21,7 +21,21 @@ cd bento-microservices-express/bento-microservices-express
 npm install
 ```
 
-3. Set up environment variables:
+3. Set up the database:
+```bash
+# Create MySQL database
+mysql -u root -p
+```
+```sql
+CREATE DATABASE social_network;
+```
+
+4. Import database dump:
+```bash
+mysql -u root -p social_network < ../../data/social_network_dump.sql
+```
+
+5. Set up environment variables:
 ```bash
 cp .env.example .env
 ```
