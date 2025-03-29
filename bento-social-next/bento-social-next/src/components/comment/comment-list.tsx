@@ -42,45 +42,26 @@ export default function CommentList({ postId }: CommentListProps) {
   };
 
   const toggleReplies = async (commentId: string) => {
-    // If closing, just toggle state
-    if (openReplies[commentId]) {
-      setOpenReplies((prev) => ({
-        ...prev,
-        [commentId]: false,
-      }));
-      return;
-    }
-
-    // If opening, fetch replies
-    try {
-      setLoadingReplies((prev) => ({
-        ...prev,
-        [commentId]: true,
-      }));
-
-      const response = await getReplies(commentId);
-      
-      if (response.data && response.data.length > 0) {
-        setComments((prevComments) =>
-          prevComments.map((c) =>
-            c.id === commentId ? { ...c, replies: response.data } : c
-          )
-        );
-      } else {
-        console.log('No replies found for comment:', commentId);
+    if (!openReplies[commentId]) {
+      try {
+        setLoadingReplies(prev => ({ ...prev, [commentId]: true }));
+        const response = await getReplies(commentId);
+        
+        if (response.data && response.data.length > 0) {
+          setComments(prevComments =>
+            prevComments.map(c =>
+              c.id === commentId ? { ...c, replies: response.data } : c
+            )
+          );
+        }
+        setOpenReplies(prev => ({ ...prev, [commentId]: true }));
+      } catch (err) {
+        console.error('Lỗi khi tải trả lời:', err);
+      } finally {
+        setLoadingReplies(prev => ({ ...prev, [commentId]: false }));
       }
-
-      setOpenReplies((prev) => ({
-        ...prev,
-        [commentId]: true,
-      }));
-    } catch (err) {
-      console.error('Lỗi khi tải trả lời:', err);
-    } finally {
-      setLoadingReplies((prev) => ({
-        ...prev,
-        [commentId]: false,
-      }));
+    } else {
+      setOpenReplies(prev => ({ ...prev, [commentId]: false }));
     }
   };
 
@@ -89,7 +70,7 @@ export default function CommentList({ postId }: CommentListProps) {
   };
 
   const handleReplyAdded = (commentId: string) => {
-    setOpenReplies((prev) => ({
+    setOpenReplies(prev => ({
       ...prev,
       [commentId]: true,
     }));
@@ -148,27 +129,48 @@ export default function CommentList({ postId }: CommentListProps) {
               />
 
               {comment.replyCount > 0 && (
-                <button
-                  onClick={() => toggleReplies(comment.id)}
-                  className="self-start ml-10 text-tertiary hover:underline"
-                >
-                  <Typography level="captionsm">
-                    {openReplies[comment.id]
-                      ? `Ẩn ${comment.replyCount} trả lời`
-                      : `Xem ${comment.replyCount} trả lời`}
-                  </Typography>
-                </button>
+                <div className="flex items-center ml-10 mt-2 gap-2">
+                  <button
+                    onClick={() => toggleReplies(comment.id)}
+                    className="flex items-center gap-2 text-blue-500 hover:text-blue-600 transition-colors"
+                  >
+                    {openReplies[comment.id] ? (
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M18 15l-6-6-6 6"/>
+                      </svg>
+                    ) : (
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M6 9l6 6 6-6"/>
+                      </svg>
+                    )}
+                    <Typography level="captionsm" className="text-blue-500 hover:text-blue-600">
+                      {openReplies[comment.id]
+                        ? `Ẩn trả lời`
+                        : `Xem ${comment.replyCount} trả lời`}
+                    </Typography>
+                  </button>
+                </div>
               )}
 
               {loadingReplies[comment.id] ? (
-                <div className="ml-10 mt-2">
-                  <Typography level="base2m" className="text-tertiary">
+                <div className="ml-10 mt-2 flex items-center gap-2 text-gray-500 pl-4">
+                  <svg className="animate-spin" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="12" y1="2" x2="12" y2="6"/>
+                    <line x1="12" y1="18" x2="12" y2="22"/>
+                    <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/>
+                    <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/>
+                    <line x1="2" y1="12" x2="6" y2="12"/>
+                    <line x1="18" y1="12" x2="22" y2="12"/>
+                    <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/>
+                    <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/>
+                  </svg>
+                  <Typography level="base2m" className="text-gray-500">
                     Đang tải trả lời...
                   </Typography>
                 </div>
               ) : (
                 openReplies[comment.id] && comment.replies && comment.replies.length > 0 && (
-                  <div className="ml-10 flex flex-col gap-3">
+                  <div className="ml-10 pl-4 border-l border-gray-200 flex flex-col gap-3">
                     {comment.replies.map((reply) => (
                       <CommentItem
                         key={reply.id}
