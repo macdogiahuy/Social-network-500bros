@@ -86,8 +86,8 @@ async function bootServer(port: number) {
 
     const server = createServer(app);
 
-    server.listen(port, () => {
-      Logger.success(`Server is running on port ${port}`);
+    server.listen(port, config.host, () => {
+      Logger.success(`Server is running on ${config.host}:${port}`);
     });
   } catch (e) {
     Logger.error(`Failed to start server: ${(e as Error).message}`);
