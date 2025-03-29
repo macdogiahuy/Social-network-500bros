@@ -11,7 +11,7 @@ export class CommentHttpService {
   async listCommentAPI(req: Request, res: Response) {
     const dto: CommentCondDTO = {
       postId: req.params.id,
-      parentId: req.path.includes('/replies') ? req.params.id : null,
+      parentId: req.path.includes('/replies') ? req.params.id : undefined,
       ...req.query
     };
 
