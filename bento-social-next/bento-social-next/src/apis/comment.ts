@@ -1,14 +1,13 @@
 import axiosInstance, { endpoints } from '@/utils/axios';
-
 import { IApiResponse } from '@/interfaces/api-response';
-import { IChilrenComment, ICommment } from '@/interfaces/comment';
+import { ICommment, IChildComment, IPaginatedResponse } from '@/interfaces/comment';
 import { isValidUUID } from '@/utils/uuid-validator';
 
 //--------------------------------------------------------------------------------------------
 
 export const getComments = async (
   postId: string
-): Promise<IApiResponse<ICommment[]>> => {
+): Promise<IApiResponse<IPaginatedResponse<ICommment>>> => {
   if (!isValidUUID(postId)) {
     throw new Error('ID bài viết không hợp lệ');
   }
@@ -20,7 +19,7 @@ export const getComments = async (
 
 export const getReplies = async (
   commentId: string
-): Promise<IApiResponse<IChilrenComment[]>> => {
+): Promise<IApiResponse<IPaginatedResponse<IChildComment>>> => {
   if (!isValidUUID(commentId)) {
     throw new Error('ID comment không hợp lệ');
   }
@@ -46,7 +45,7 @@ export const createComment = async (
 export const createReply = async (
   commentId: string,
   content: string
-): Promise<IApiResponse<IChilrenComment>> => {
+): Promise<IApiResponse<IChildComment>> => {
   if (!isValidUUID(commentId)) {
     throw new Error('ID comment không hợp lệ');
   }

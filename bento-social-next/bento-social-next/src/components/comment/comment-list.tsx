@@ -28,11 +28,13 @@ export default function CommentList({ postId }: CommentListProps) {
       setLoading(true);
       setError(null);
       const response = await getComments(postId);
-      const commentsWithReplies = (response.data || []).map(comment => ({
-        ...comment,
-        replies: []
-      }));
-      setComments(commentsWithReplies);
+      if (response.data?.data) {
+        const commentsWithReplies = response.data.data.map(comment => ({
+          ...comment,
+          replies: []
+        }));
+        setComments(commentsWithReplies);
+      }
     } catch (err) {
       console.error('Lỗi khi tải bình luận:', err);
       setError('Không thể tải bình luận. Vui lòng thử lại sau.');
@@ -46,14 +48,15 @@ export default function CommentList({ postId }: CommentListProps) {
       try {
         setLoadingReplies(prev => ({ ...prev, [commentId]: true }));
         const response = await getReplies(commentId);
-        const replies = response.data || [];
-        setComments(prevComments =>
-          prevComments.map(c =>
-            c.id === commentId 
-              ? { ...c, replies, replyCount: replies.length } 
-              : c
-          )
-        );
+        if (response.data?.data) {
+          setComments(prevComments =>
+            prevComments.map(c =>
+              c.id === commentId
+                ? { ...c, replies: response.data.data, replyCount: response.data.data.length }
+                : c
+            )
+          );
+        }
         setOpenReplies(prev => ({ ...prev, [commentId]: true }));
       } catch (err) {
         console.error('Lỗi khi tải trả lời:', err);
