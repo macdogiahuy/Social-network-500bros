@@ -30,7 +30,7 @@ export default function CommentList({ postId }: CommentListProps) {
       const response = await getComments(postId);
       const commentsWithReplies = (response.data || []).map(comment => ({
         ...comment,
-        replies: comment.replies || []
+        replies: []
       }));
       setComments(commentsWithReplies);
     } catch (err) {
@@ -130,20 +130,46 @@ export default function CommentList({ postId }: CommentListProps) {
                 />
               </div>
 
-              {comment.replyCount > 0 && (
-                <button
-                  onClick={() => toggleReplies(comment.id)}
-                  className="ml-4 text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1.5"
-                >
-                  <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M2 5a2 2 0 012-2h12a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V5zm3.293 1.293a1 1 0 011.414 0L10 9.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
-                  </svg>
-                  {openReplies[comment.id] ? 'Ẩn phản hồi' : `${comment.replyCount} phản hồi`}
-                </button>
+              {comment.replyCount > 0 && !openReplies[comment.id] && (
+                <div className="ml-8 mt-2">
+                  <button
+                    onClick={() => toggleReplies(comment.id)}
+                    className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1.5"
+                  >
+                    <svg 
+                      width="16" 
+                      height="16" 
+                      viewBox="0 0 20 20" 
+                      className="transform rotate-90"
+                      fill="currentColor"
+                    >
+                      <path d="M7.293 4.293a1 1 0 011.414 0L14.414 10l-5.707 5.707a1 1 0 01-1.414-1.414L11.586 10 7.293 5.707a1 1 0 010-1.414z" />
+                    </svg>
+                    Xem {comment.replyCount} phản hồi
+                  </button>
+                </div>
               )}
 
               {openReplies[comment.id] && (
                 <div className="ml-8 mt-2">
+                  {comment.replyCount > 0 && (
+                    <button
+                      onClick={() => toggleReplies(comment.id)}
+                      className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1.5 mb-2"
+                    >
+                      <svg 
+                        width="16" 
+                        height="16" 
+                        viewBox="0 0 20 20" 
+                        className="transform -rotate-90"
+                        fill="currentColor"
+                      >
+                        <path d="M7.293 4.293a1 1 0 011.414 0L14.414 10l-5.707 5.707a1 1 0 01-1.414-1.414L11.586 10 7.293 5.707a1 1 0 010-1.414z" />
+                      </svg>
+                      Ẩn phản hồi
+                    </button>
+                  )}
+                  
                   {loadingReplies[comment.id] ? (
                     <div className="flex items-center gap-2 text-gray-500">
                       <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
