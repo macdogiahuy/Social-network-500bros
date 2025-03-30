@@ -28,8 +28,8 @@ export default function CommentList({ postId }: CommentListProps) {
       setLoading(true);
       setError(null);
       const response = await getComments(postId);
-      if (response.data?.data) {
-        const commentsWithReplies = response.data.data.map(comment => ({
+      if (response.success && response.data?.data) {
+        const commentsWithReplies = response.data.data.map((comment: ICommment) => ({
           ...comment,
           replies: []
         }));
@@ -48,7 +48,7 @@ export default function CommentList({ postId }: CommentListProps) {
       try {
         setLoadingReplies(prev => ({ ...prev, [commentId]: true }));
         const response = await getReplies(commentId);
-        if (response.data?.data) {
+        if (response.success && response.data?.data) {
           setComments(prevComments =>
             prevComments.map(c =>
               c.id === commentId

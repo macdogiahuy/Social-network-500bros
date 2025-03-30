@@ -1,6 +1,6 @@
 import axiosInstance, { endpoints } from '@/utils/axios';
-import { IApiResponse } from '@/interfaces/api-response';
 import { ICommment, IChildComment, IPaginatedResponse } from '@/interfaces/comment';
+import { IApiResponse } from '@/interfaces/api-response';
 import { isValidUUID } from '@/utils/uuid-validator';
 
 //--------------------------------------------------------------------------------------------
@@ -11,10 +11,17 @@ export const getComments = async (
   if (!isValidUUID(postId)) {
     throw new Error('ID bài viết không hợp lệ');
   }
-  const response = await axiosInstance.get(
-    endpoints.comment.getComments(postId)
-  );
-  return response.data;
+  
+  try {
+    const response = await axiosInstance.get(
+      endpoints.comment.getComments(postId)
+    );
+    console.log('Comments API response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Get comments error:', error);
+    throw error;
+  }
 };
 
 export const getReplies = async (
@@ -23,10 +30,17 @@ export const getReplies = async (
   if (!isValidUUID(commentId)) {
     throw new Error('ID comment không hợp lệ');
   }
-  const response = await axiosInstance.get(
-    endpoints.comment.getReplies(commentId)
-  );
-  return response.data;
+  
+  try {
+    const response = await axiosInstance.get(
+      endpoints.comment.getReplies(commentId)
+    );
+    console.log('Replies API response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Get replies error:', error);
+    throw error;
+  }
 };
 
 export const createComment = async (
