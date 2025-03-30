@@ -46,14 +46,14 @@ export default function CommentList({ postId }: CommentListProps) {
       try {
         setLoadingReplies(prev => ({ ...prev, [commentId]: true }));
         const response = await getReplies(commentId);
-        
-        if (response.data && response.data.length > 0) {
-          setComments(prevComments =>
-            prevComments.map(c =>
-              c.id === commentId ? { ...c, replies: response.data } : c
-            )
-          );
-        }
+        const replies = response.data || [];
+        setComments(prevComments =>
+          prevComments.map(c =>
+            c.id === commentId 
+              ? { ...c, replies, replyCount: replies.length } 
+              : c
+          )
+        );
         setOpenReplies(prev => ({ ...prev, [commentId]: true }));
       } catch (err) {
         console.error('Lỗi khi tải trả lời:', err);
