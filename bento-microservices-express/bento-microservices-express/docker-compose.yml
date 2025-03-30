@@ -4,7 +4,7 @@ services:
   mysql:
     image: mysql:8.0
     container_name: mysql-bento
-    restart: always
+    restart: unless-stopped
     ports:
       - '3307:3306'
     environment:
@@ -13,29 +13,79 @@ services:
     volumes:
       - social_mysql:/var/lib/mysql
       - ./docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+      - ./mysql/my.cnf:/etc/mysql/conf.d/custom.cnf:ro
     networks:
       - social
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
     healthcheck:
-      test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost']  
-      timeout: 20s
-      retries: 10
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    stop_grace_period: 30s
+    ulimits:
+      nofile:
+        soft: 20000
+        hard: 40000
+
   redis:
     image: redis:6.0
     container_name: redis
-    restart: always
+    restart: unless-stopped
     ports:
       - '6379:6379'
     volumes:
       - redis-bento:/data
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
     environment:
       - REDIS_PASSWORD=macdogiahuy_redis
     networks:
       - social
-    command: /bin/sh -c 'redis-server --appendonly yes --requirepass $$REDIS_PASSWORD'
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.3'
+        reservations:
+          memory: 128M
+          cpus: '0.1'
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    stop_grace_period: 10s
+    ulimits:
+      nofile:
+        soft: 10000
+        hard: 20000
+    sysctls:
+      net.core.somaxconn: '512'
 
 networks:
   social:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.host_binding_ipv4: "0.0.0.0"
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.20.0.0/16
 
 volumes:
   social_mysql:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${PWD}/data/mysql
+      o: bind
   redis-bento:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${PWD}/data/redis
+      o: bind
