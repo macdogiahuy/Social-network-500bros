@@ -1,116 +1,95 @@
-# Social Network Project
+# Bento Social Network
 
-A full-stack social network application with microservices architecture.
+A social networking application with microservices architecture using Next.js for frontend and Express.js for backend services.
 
 ## Project Structure
 
-- `bento-microservices-express/`: Backend API with microservices
-- `bento-social-next/`: Frontend Next.js application
+```
+├── bento-microservices-express/   # Backend services
+├── bento-social-next/            # Frontend application
+├── start-localhost.bat           # Script to run locally
+├── start-network.bat            # Script to run with network access
+├── stop.bat                    # Script to stop all services
+└── test-services.bat          # Script to test service connectivity
+```
 
-## Setup Instructions
+## Prerequisites
 
-### Backend Setup
+- Node.js and npm/pnpm
+- Docker and Docker Compose
+- MySQL (through Docker)
+- Redis (through Docker)
 
-1. Install Docker and Docker Compose if not already installed:
-   - [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Windows/Mac)
-   - [Docker Engine](https://docs.docker.com/engine/install/) (Linux)
+## Getting Started
 
-2. Navigate to the backend directory:
+### Development Setup
+
+1. Clone the repository
 ```bash
+git clone [your-repo-url]
+cd bento-social-network
+```
+
+2. Install dependencies in both frontend and backend directories
+```bash
+# Install backend dependencies
 cd bento-microservices-express/bento-microservices-express
+pnpm install
+
+# Install frontend dependencies
+cd ../../bento-social-next/bento-social-next
+pnpm install
 ```
 
-3. Start the database and Redis services:
-```bash
-docker-compose up -d
-```
-This will automatically:
-- Start MySQL server on port 3307
-- Start Redis server on port 6379
-- Create and initialize the database with existing data
-- Set up all required configurations
+### Running the Application
 
-4. Install dependencies:
-```bash
-npm install
-```
+#### Local Development
+To run the application locally:
+1. Double-click `start-localhost.bat`
+2. Access:
+   - Frontend: http://localhost:3001
+   - Backend: http://localhost:3000
 
-5. Set up environment variables:
-```bash
-cp .env.example .env
-```
-Then edit `.env` with your configuration:
-- Set database credentials (DB_USERNAME, DB_PASSWORD)
-- Set Redis password
-- Set JWT secret key
-- Keep HOST=0.0.0.0 to allow external connections
+#### Network Access
+To run the application with network access:
+1. Double-click `start-network.bat`
+2. Access:
+   - Frontend: http://[your-ip]:3001
+   - Backend: http://[your-ip]:3000
 
-4. Start the server:
-```bash
-npm start
-```
+### Stopping the Application
+To stop all services:
+1. Double-click `stop.bat`
 
-### Frontend Setup
+### Troubleshooting
+If you encounter connection issues:
+1. Run `test-services.bat` to check Docker service connectivity
+2. Run `stop.bat` to clean up everything
+3. Try starting again with the appropriate script
 
-1. Navigate to the frontend directory:
-```bash
-cd bento-social-next/bento-social-next
-```
+## Environment Files
 
-2. Install dependencies:
-```bash
-npm install
-```
+The project uses different environment files for different deployment scenarios:
 
-3. Set up environment variables:
-```bash
-cp .env.example .env
-```
-Then edit `.env`:
-- For local development: `NEXT_PUBLIC_API_DOMAIN='http://localhost:3000'`
-- For network access: `NEXT_PUBLIC_API_DOMAIN='http://YOUR_IP_ADDRESS:3000'`
+- `.env.development` - Local development configuration
+- `.env.network` - Network access configuration
 
-4. Start the development server:
-```bash
-npm run dev
-```
+## Docker Services
 
-## Accessing the Application
+The application relies on the following Docker services:
 
-### Local Development
-- Backend API: http://localhost:3000
-- Frontend: http://localhost:3001
+- MySQL (port 3307)
+- Redis (port 6379)
 
-### Network Access
-1. Find your computer's IP address:
-   - Windows: Run `ipconfig` in terminal
-   - Mac/Linux: Run `ifconfig` in terminal
+These services are automatically managed by the start/stop scripts.
 
-2. Configure Windows Firewall (required for external access):
-   - Open PowerShell as Administrator
-   - Run these commands:
-   ```powershell
-   netsh advfirewall firewall add rule name="Node.js Backend (TCP-In)" dir=in action=allow protocol=TCP localport=3000
-   netsh advfirewall firewall add rule name="Next.js Frontend (TCP-In)" dir=in action=allow protocol=TCP localport=3001
-   ```
+## Contributing
 
-3. Access from other devices on the same network:
-   - Backend API: http://YOUR_IP_ADDRESS:3000
-   - Frontend: http://YOUR_IP_ADDRESS:3001
+1. Create a new branch for your feature
+2. Make your changes
+3. Test thoroughly
+4. Submit a pull request
 
-## Troubleshooting
+## License
 
-1. Connection Issues:
-   - Verify both servers are running
-   - Check firewall settings
-   - Ensure devices are on the same network
-   - Try disabling antivirus temporarily
-
-2. Database Connection:
-   - Verify MySQL is running
-   - Check database credentials in .env
-   - Ensure database exists
-
-3. Redis Connection:
-   - Verify Redis server is running
-   - Check Redis password in .env
+[Your License Here]

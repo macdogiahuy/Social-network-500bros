@@ -1,5 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { IPaging } from './paging';
+
+//----------------------------------------------------------------------------
+
 export interface IApiResponse<T> {
-  success: boolean;
   data: T;
-  message?: string;
+  paging: IPaging;
+  total: number;
+  filter: Record<string, any>;
 }

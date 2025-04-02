@@ -1,46 +1,33 @@
 import axiosInstance, { endpoints } from '@/utils/axios';
-import { ICommment, IChildComment, IPaginatedResponse } from '@/interfaces/comment';
+
 import { IApiResponse } from '@/interfaces/api-response';
+import { IChildComment, ICommment } from '@/interfaces/comment';
 import { isValidUUID } from '@/utils/uuid-validator';
 
 //--------------------------------------------------------------------------------------------
 
 export const getComments = async (
   postId: string
-): Promise<IApiResponse<IPaginatedResponse<ICommment>>> => {
+): Promise<IApiResponse<ICommment[]>> => {
   if (!isValidUUID(postId)) {
     throw new Error('ID bài viết không hợp lệ');
   }
-  
-  try {
-    const response = await axiosInstance.get(
-      endpoints.comment.getComments(postId)
-    );
-    console.log('Comments API response:', response.data);
-    return response.data;
-  } catch (error) {
-    console.error('Get comments error:', error);
-    throw error;
-  }
+  const response = await axiosInstance.get(
+    endpoints.comment.getComments(postId)
+  );
+  return response.data;
 };
 
 export const getReplies = async (
   commentId: string
-): Promise<IApiResponse<IPaginatedResponse<IChildComment>>> => {
+): Promise<IApiResponse<IChildComment[]>> => {
   if (!isValidUUID(commentId)) {
     throw new Error('ID comment không hợp lệ');
   }
-  
-  try {
-    const response = await axiosInstance.get(
-      endpoints.comment.getReplies(commentId)
-    );
-    console.log('Replies API response:', response.data);
-    return response.data;
-  } catch (error) {
-    console.error('Get replies error:', error);
-    throw error;
-  }
+  const response = await axiosInstance.get(
+    endpoints.comment.getReplies(commentId)
+  );
+  return response.data;
 };
 
 export const createComment = async (
@@ -118,6 +105,18 @@ export const unlikeComment = async (
   }
   const response = await axiosInstance.delete(
     endpoints.comment.unlike(commentId)
+  );
+  return response.data;
+};
+
+export const getReplyComments = async (
+  commentId: string
+): Promise<IApiResponse<IChildComment[]>> => {
+  if (!isValidUUID(commentId)) {
+    throw new Error('ID comment không hợp lệ');
+  }
+  const response = await axiosInstance.get(
+    endpoints.comment.getReplies(commentId)
   );
   return response.data;
 };

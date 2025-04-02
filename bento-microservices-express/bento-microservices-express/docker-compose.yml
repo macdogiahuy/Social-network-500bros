@@ -2,7 +2,9 @@ version: '3'
 
 services:
   mysql:
-    image: mysql:8.0
+    build:
+      context: ./mysql
+      dockerfile: Dockerfile
     container_name: mysql-bento
     restart: unless-stopped
     ports:
@@ -13,11 +15,10 @@ services:
     volumes:
       - social_mysql:/var/lib/mysql
       - ./docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
-      - ./mysql/my.cnf:/etc/mysql/conf.d/custom.cnf:ro
     networks:
       - social
     deploy:
-      resources:  
+      resources:
         limits:
           memory: 512M
           cpus: '0.5'
@@ -35,6 +36,12 @@ services:
       nofile:
         soft: 20000
         hard: 40000
+    command: >
+      --performance_schema=OFF
+      --innodb_buffer_pool_size=256M
+      --innodb_log_file_size=64M
+      --max_connections=100
+      --thread_cache_size=50
 
   redis:
     image: redis:6.0
@@ -44,7 +51,10 @@ services:
       - '6379:6379'
     volumes:
       - redis-bento:/data
-      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+      - type: bind
+        source: ./redis/redis.conf
+        target: /usr/local/etc/redis/redis.conf
+        read_only: true
     environment:
       - REDIS_PASSWORD=macdogiahuy_redis
     networks:
@@ -67,23 +77,9 @@ services:
 networks:
   social:
     driver: bridge
-    driver_opts:
-      com.docker.network.bridge.host_binding_ipv4: "0.0.0.0"
-    ipam:
-      driver: default
-      config:
-        - subnet: 172.20.0.0/16
 
 volumes:
   social_mysql:
     driver: local
-    driver_opts:
-      type: none
-      device: ${PWD}/data/mysql
-      o: bind
   redis-bento:
     driver: local
-    driver_opts:
-      type: none
-      device: ${PWD}/data/redis
-      o: bind

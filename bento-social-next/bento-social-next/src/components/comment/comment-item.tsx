@@ -7,7 +7,7 @@ import {
   updateComment,
 } from '@/apis/comment';
 import { useUserProfile } from '@/context/user-context';
-import { IChilrenComment, ICommment } from '@/interfaces/comment';
+import { IChildComment, ICommment } from '@/interfaces/comment';
 import { IUserProfile } from '@/interfaces/user';
 import { relativeTime } from '@/utils/relative-time';
 import Link from 'next/link';
@@ -28,13 +28,17 @@ import { ReactItem } from '../post/react-item';
 import { Typography } from '../typography';
 
 interface CommentItemProps {
-  data: ICommment | IChilrenComment;
+  data: ICommment | IChildComment;
   isReply?: boolean;
   onReply?: (comment: { id: string; fullname: string }) => void;
   onCommentUpdated?: () => void;
   onCommentDeleted?: () => void;
   openMoreOptionsId?: string | null;
   setOpenMoreOptionsId?: (id: string | null) => void;
+  onToggleReplies?: (commentId: string) => void;
+  showReplies?: boolean;
+  replies?: IChildComment[];
+  isLoadingReplies?: boolean;
 }
 
 export default function CommentItem({
@@ -45,6 +49,10 @@ export default function CommentItem({
   onCommentDeleted,
   openMoreOptionsId,
   setOpenMoreOptionsId,
+  onToggleReplies,
+  showReplies = false,
+  replies = [],
+  isLoadingReplies = false,
 }: CommentItemProps) {
   const { userProfile } = useUserProfile();
   const [localData, setLocalData] = useState(data);
@@ -127,6 +135,12 @@ export default function CommentItem({
       console.error('Lỗi khi xóa comment:', error);
     } finally {
       setIsConfirmDelete(false);
+    }
+  };
+
+  const handleToggleReplies = () => {
+    if (onToggleReplies) {
+      onToggleReplies(data.id);
     }
   };
 
@@ -221,7 +235,48 @@ export default function CommentItem({
               }
             />
           )}
+
+          {!isReply && (
+            <Button
+              onClick={handleToggleReplies}
+              className="p-0"
+              child={
+                <Typography level="captionsm" className="text-tertiary">
+                  {showReplies ? 'Ẩn trả lời' : 'Xem trả lời'}
+                </Typography>
+              }
+            />
+          )}
         </div>
+        {showReplies && (
+          <div className="mt-2 pl-4">
+            {isLoadingReplies ? (
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
+                <Typography level="captionr" className="text-tertiary">
+                  Đang tải phản hồi...
+                </Typography>
+              </div>
+            ) : replies.length > 0 ? (
+              replies.map((reply) => (
+                <CommentItem
+                  key={reply.id}
+                  data={reply}
+                  isReply={true}
+                  onReply={onReply}
+                  onCommentUpdated={onCommentUpdated}
+                  onCommentDeleted={onCommentDeleted}
+                  openMoreOptionsId={openMoreOptionsId}
+                  setOpenMoreOptionsId={setOpenMoreOptionsId}
+                />
+              ))
+            ) : (
+              <Typography level="captionr" className="text-tertiary ml-2">
+                Chưa có phản hồi nào
+              </Typography>
+            )}
+          </div>
+        )}
       </div>
 
       <AlertDialog
