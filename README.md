@@ -7,6 +7,7 @@ A social networking application with microservices architecture using Next.js fo
 ```
 ├── bento-microservices-express/   # Backend services
 ├── bento-social-next/            # Frontend application
+├── sync-db/                      # Database synchronization scripts
 ├── start-localhost.bat           # Script to run locally
 ├── start-network.bat            # Script to run with network access
 ├── stop.bat                    # Script to stop all services
@@ -73,6 +74,24 @@ The project uses different environment files for different deployment scenarios:
 
 - `.env.development` - Local development configuration
 - `.env.network` - Network access configuration
+
+## Database Synchronization
+
+The project includes scripts to synchronize the database between different computers:
+
+### Exporting Database
+To export your current database:
+1. Navigate to `sync-db` directory
+2. Run `export-db.bat`
+3. Find the exported .sql file in `sync-db/dumps` directory
+
+### Importing Database
+To import a database on another computer:
+1. Copy the exported .sql file to `sync-db/dumps` directory
+2. Run `import-db.bat`
+3. Follow the prompts to select and import the database file
+
+For detailed instructions, see `sync-db/README.md`.
 
 ## Docker Services
 
