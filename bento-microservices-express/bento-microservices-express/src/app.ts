@@ -18,6 +18,12 @@ function buildApp(): Application {
     });
   });
 
+  // Global error handler (phải đặt sau tất cả các route)
+  app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+    console.error('Global error:', err);
+    res.status(err.status || 500).json({ error: err.message || 'Internal Server Error' });
+  });
+
   return app;
 }
 

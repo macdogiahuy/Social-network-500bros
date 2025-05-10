@@ -8,7 +8,7 @@ export function authMiddleware(introspector: ITokenIntrospect): Handler {
       // 1. Get token from header
       const authHeader = req.headers.authorization;
       if (!authHeader) {
-        throw ErrTokenInvalid.withLog('Authorization header is missing');
+        return res.status(401).json({ error: 'Access token is missing' });
       }
 
       const [scheme, token] = authHeader.split(' ');
