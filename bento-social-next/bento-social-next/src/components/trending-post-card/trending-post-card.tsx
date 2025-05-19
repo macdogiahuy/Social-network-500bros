@@ -20,7 +20,7 @@ interface TrendingPostCardProps {
   alt: string;
   time: string;
   author: IAuthor;
-  topic: ITopic;
+  topic?: ITopic;
 }
 
 export default function TrendingPostCard({
@@ -67,7 +67,7 @@ export default function TrendingPostCard({
                 className="flex w-fit justify-start items-start"
               >
                 <Avatar
-                  src={author?.avatar ?? author.avatar ?? ''}
+                  src={author?.avatar ?? ''}
                   alt={author.username}
                   size={20}
                   className="max-h-[20px]"
@@ -76,15 +76,19 @@ export default function TrendingPostCard({
               <Typography level="captionr" className="opacity-45 text-tertiary">
                 {relativeTime(new Date(time))}
               </Typography>
-              <div
-                className="p-1 rounded-full"
-                style={{
-                  backgroundColor: `${topic.color ? topic.color : '#ffffff'}`,
-                }}
-              ></div>
-              <Typography level="captionr" className="text-tertiary">
-                {topic.name}
-              </Typography>
+              {topic && (
+                <>
+                  <div
+                    className="p-1 rounded-full"
+                    style={{
+                      backgroundColor: topic.color || '#ffffff',
+                    }}
+                  ></div>
+                  <Typography level="captionr" className="text-tertiary">
+                    {topic.name}
+                  </Typography>
+                </>
+              )}
             </div>
           )}
         </div>

@@ -2,8 +2,6 @@ import { Avatar } from '@/components/avatar';
 import { Typography } from '@/components/typography';
 import { formatDistanceToNow } from 'date-fns';
 
-//----------------------------------------------------------------------
-
 interface ConversationItemProps {
   conversation: {
     id: string;
@@ -25,7 +23,7 @@ export default function ConversationItem({
 }: ConversationItemProps) {
   const formattedTime = formatDistanceToNow(
     new Date(conversation.lastMessageTime),
-    { addSuffix: true }
+    { addSuffix: true },
   );
 
   return (

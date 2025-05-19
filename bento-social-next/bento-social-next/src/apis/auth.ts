@@ -15,15 +15,27 @@ interface RegisterParams {
   password: string;
 }
 
-export const login = async ({ username, password }: LoginParams): Promise<IApiResponse<string>> => {
-  const response = await axiosInstance.post(endpoints.auth.login, {
-    username,
-    password,
-  });
-  return response.data;
-}
+export const login = async ({
+  username,
+  password,
+}: LoginParams): Promise<IApiResponse<string>> => {
+  try {
+    console.log('Login request to:', endpoints.auth.login);
+    const response = await axiosInstance.post(endpoints.auth.login, {
+      username,
+      password,
+    });
+    console.log('Raw login response:', response);
+    return response.data;
+  } catch (error) {
+    console.error('Login API error:', error);
+    throw error;
+  }
+};
 
-export const register = async (params: RegisterParams): Promise<IApiResponse<string>> => {
+export const register = async (
+  params: RegisterParams
+): Promise<IApiResponse<string>> => {
   const response = await axiosInstance.post(endpoints.auth.register, params);
   return response.data;
 };

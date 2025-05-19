@@ -1,8 +1,9 @@
 'use client';
 
-import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import React from 'react';
 
 import { useUserProfile } from '@/context/user-context';
 import { IUserProfile } from '@/interfaces/user';
@@ -14,14 +15,16 @@ import {
   CommentIcon,
   EditIcon,
   LinkIcon,
+  MessageIcon,
   ProfileIcon,
   ShareIcon,
 } from '@/components/icons';
 import { SplashScreen } from '@/components/loading-screen';
 import { Typography } from '@/components/typography';
 
-import { USER_AVATAR_PLACEHOLDER } from '@/constant';
+import { initiateConversation } from '@/apis/conversation';
 import { followUser, hasFollowed, unfollowUser } from '@/apis/user';
+import { USER_AVATAR_PLACEHOLDER } from '@/constant';
 
 //-------------------------------------------------------------------------
 
@@ -30,9 +33,12 @@ interface UserInfoProps {
 }
 
 export default function InfoUser({ user }: UserInfoProps) {
+  const router = useRouter();
   const { userProfile, loading } = useUserProfile();
   const [isFollowed, setIsFollowed] = React.useState<boolean>(false);
   const [isCopied, setIsCopied] = React.useState<boolean>(false);
+  const [isMessageLoading, setIsMessageLoading] =
+    React.useState<boolean>(false);
 
   React.useEffect(() => {
     (async () => {
@@ -61,6 +67,26 @@ export default function InfoUser({ user }: UserInfoProps) {
     }
   };
 
+  const handleMessage = async () => {
+    setIsMessageLoading(true);
+    try {
+      const response = await initiateConversation(user.id);
+      if (response?.data?.id) {
+        router.push(`/messages?conversationId=${response.data.id}`);
+      } else {
+        console.error('Invalid response format:', response);
+        alert('Failed to start conversation. Please try again.');
+      }
+    } catch (error: unknown) {
+      console.error('Error initiating conversation:', error);
+      const errorMessage =
+        error instanceof Error ? error.message : 'An error occurred';
+      alert(`Failed to start conversation: ${errorMessage}`);
+    } finally {
+      setIsMessageLoading(false);
+    }
+  };
+
   if (loading) return <SplashScreen />;
 
   return (
@@ -70,8 +96,9 @@ export default function InfoUser({ user }: UserInfoProps) {
           width={1280}
           height={180}
           src={user.cover ? user.cover : '/img/default-cover.jpg'}
-          className="max-h-[11.25rem] w-full object-cover"
+          className="max-h-[11.25rem] w-full object-cover h-auto"
           alt="cover"
+          priority
         />
         <AvatarProfile
           avatar={user.avatar || USER_AVATAR_PLACEHOLDER}
@@ -102,15 +129,23 @@ export default function InfoUser({ user }: UserInfoProps) {
           />
 
           {user.id !== userProfile?.id && (
-            <Button
-              child={
-                <Typography level="base2r" className="text-tertiary">
-                  {isFollowed ? 'Unfollow' : 'Follow'}
-                </Typography>
-              }
-              className="p-2.5"
-              onClick={handleFollow}
-            />
+            <>
+              <Button
+                child={
+                  <Typography level="base2r" className="text-tertiary">
+                    {isFollowed ? 'Unfollow' : 'Follow'}
+                  </Typography>
+                }
+                className="p-2.5"
+                onClick={handleFollow}
+              />
+              <Button
+                child={isMessageLoading ? 'Loading...' : <MessageIcon />}
+                className="p-2.5"
+                onClick={handleMessage}
+                disabled={isMessageLoading}
+              />
+            </>
           )}
 
           {user.id === userProfile?.id && (

@@ -5,7 +5,6 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 
 import commentRoutes from '@modules/comment/comment.route';
-import conversationRoutes from '@modules/conversation/conversation.route';
 import followingRoutes from '@modules/following/following.route';
 import postRoutes from '@modules/post/post.route';
 import userRoutes from '@modules/user/user.route';
@@ -31,7 +30,6 @@ function buildApp(): Application {
   app.use('/v1/posts', postRoutes);
   app.use('/v1/comments', commentRoutes);
   app.use('/v1/following', followingRoutes);
-  app.use('/v1/conversations', conversationRoutes);
 
   // Global error handler (phải đặt sau tất cả các route)
   app.use((err: any, req: Request, res: Response, next: NextFunction) => {

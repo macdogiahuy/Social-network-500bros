@@ -8,10 +8,6 @@ import { login } from '@/apis/auth';
 import { useAuth } from '@/context/auth-context';
 import { loginSchema } from '../data';
 
-import { Button } from '@/components/button';
-import { LogoSVG, GoogleSVG } from '@/components/icons';
-import { DebouncedInput } from '@/components/input';
-import { Typography } from '@/components/typography';
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -22,8 +18,15 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/alert-dialog';
+import { Button } from '@/components/button';
+import { GoogleSVG, LogoSVG } from '@/components/icons';
+import { DebouncedInput } from '@/components/input';
+import { Typography } from '@/components/typography';
 
+import { HOST_API } from '@/global-config';
 import styled from '@/styles/auth.module.css';
+import axiosInstance, { endpoints } from '@/utils/axios';
+import axios from 'axios';
 
 //----------------------------------------------------------------------
 
@@ -56,15 +59,56 @@ export default function LoginView() {
     }
 
     try {
-      const token = await login({ username, password });
+      console.log('Attempting login with:', { username, password });
+      const response = await login({ username, password });
+      console.log('Login response:', response);
 
-      if (token && token.data) {
-        setToken(token.data);
+      if (response?.data) {
+        // Store the token
+        const token = response.data;
+        console.log('Setting token:', token);
+
+        // Clear any existing tokens first
+        sessionStorage.removeItem('token');
+        sessionStorage.removeItem('refreshToken');
+
+        // Set new tokens
+        sessionStorage.setItem('token', token);
+        sessionStorage.setItem('refreshToken', token);
+        setToken(token);
+
+        // Set Authorization header on the main axiosInstance
+        axiosInstance.defaults.headers.common['Authorization'] =
+          `Bearer ${token}`;
+
+        // Validate the token immediately to ensure it's working
+        try {
+          const validationResponse = await axios.post(
+            `${HOST_API}${endpoints.auth.refresh}`,
+            { token }
+          );
+          console.log('Token validation response:', validationResponse.data);
+
+          if (
+            !validationResponse.data?.data?.sub ||
+            !validationResponse.data?.data?.role
+          ) {
+            throw new Error('Invalid token format from server');
+          }
+        } catch (validationError) {
+          console.error('Token validation failed:', validationError);
+          throw new Error('Token validation failed after login');
+        }
+
         router.push('/');
       }
     } catch (err: any) {
-      if (err.response && err.response.data && err.response.data.message) {
+      console.error('Login error:', err);
+
+      if (err.response?.data?.message) {
         setUsernameError(err.response.data.message);
+      } else if (err.message) {
+        setUsernameError(err.message);
       } else {
         setUsernameError('An error occurred. Please try again.');
       }

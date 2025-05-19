@@ -3,9 +3,9 @@ import React from 'react';
 
 import useBreakPoint from '@/hooks/use-breakpoint';
 
-import { ConversationSidebar } from '../components';
 import EmptyContent from '@/components/empty-content/empty-content';
 import { Typography } from '@/components/typography';
+import { ConversationSidebar } from '../components';
 
 import ConversationDetailPage from './conversation-detail-view';
 

@@ -1,13 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { getConversations, initiateConversation } from '@/apis/conversation';
+import { getConversations } from '@/apis/conversation';
 import { Button } from '@/components/button';
 import { AddIcon } from '@/components/icons';
-import { Input } from '@/components/input';
 import { Typography } from '@/components/typography';
-import { useUserProfile } from '@/context/user-context';
-import { IConversation } from '@/interfaces/conversation';
-import { useEffect, useState } from 'react';
-
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -17,12 +11,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@/components/alert-dialog';
+} from '@/components/ui/alert-dialog';
+import { useUserProfile } from '@/context/user-context';
+import { IConversation } from '@/interfaces/conversation';
+import { useEffect, useState } from 'react';
+
 import ConversationItem from './conversation-item';
 
-//----------------------------------------------------------------------
 interface ConversationSidebarProps {
-  onConversationClick: (id: string) => void;
+  onConversationClick: (conversation: IConversation) => void;
   selectedConversationId?: string;
 }
 
@@ -32,8 +29,6 @@ export default function ConversationSidebar({
 }: ConversationSidebarProps) {
   const [conversations, setConversations] = useState<IConversation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [receiverId, setReceiverId] = useState('');
-  const [isStarting, setIsStarting] = useState(false);
   const { userProfile } = useUserProfile();
 
   const fetchConversations = async () => {
@@ -52,23 +47,6 @@ export default function ConversationSidebar({
     fetchConversations();
   }, []);
 
-  const handleStartConversation = async () => {
-    if (!receiverId.trim() || isStarting) return;
-
-    try {
-      setIsStarting(true);
-      const response = await initiateConversation(receiverId.trim());
-      const newConversation = response.data;
-      setConversations((prev) => [newConversation, ...prev]);
-      onConversationClick(newConversation.id);
-      setReceiverId('');
-    } catch (error) {
-      console.error('Error starting conversation:', error);
-    } finally {
-      setIsStarting(false);
-    }
-  };
-
   return (
     <section className="relative w-full min-h-screen lg:min-h-full bg-surface-2 flex flex-col gap-3 p-3 lg:max-w-[20rem] lg:min-w-[20rem] xl:max-w-[25rem] xl:min-w-[25rem]">
       <div className="w-full flex justify-start items-center gap-2">
@@ -81,23 +59,10 @@ export default function ConversationSidebar({
               <AlertDialogTitle>New Message</AlertDialogTitle>
             </AlertDialogHeader>
             <AlertDialogDescription>
-              <div className="flex flex-col gap-4 mt-4">
-                <Input
-                  type="text"
-                  placeholder="Enter user ID to chat with"
-                  value={receiverId}
-                  onChange={(e) => setReceiverId(e.target.value)}
-                />
-                <Button
-                  onClick={handleStartConversation}
-                  disabled={!receiverId.trim() || isStarting}
-                  className="w-full"
-                  child={isStarting ? 'Starting...' : 'Start Chat'}
-                />
-              </div>
+              This feature is coming soon!
             </AlertDialogDescription>
             <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogCancel>Close</AlertDialogCancel>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
@@ -135,7 +100,7 @@ export default function ConversationSidebar({
                     conversation.messages?.[0]?.createdAt ||
                     conversation.createdAt,
                 }}
-                onClick={() => onConversationClick(conversation.id)}
+                onClick={() => onConversationClick(conversation)}
               />
             );
           })

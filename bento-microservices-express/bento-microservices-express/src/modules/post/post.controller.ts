@@ -31,11 +31,12 @@ export class PostController {
 
   async getPosts(req: Request, res: Response) {
     try {
-      const { type, limit = 10, str } = req.query;
+      const { type, limit = 10, str, userId } = req.query;
 
       const where: Prisma.PostsWhereInput = {
         ...(type === 'media' && { type: 'media' }),
-        ...(str && { content: { contains: str as string } })
+        ...(str && { content: { contains: str as string } }),
+        ...(userId && { authorId: userId as string })
       };
 
       const posts = await prisma.posts.findMany({
