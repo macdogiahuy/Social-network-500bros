@@ -63,7 +63,9 @@ export default function ComposerInput({
     getTopics()
       .then((response) => {
         setTopics(response.data);
-        setSelectedTopic(response.data[0].id);
+        if (response.data.length > 0) {
+          setSelectedTopic(response.data[0].id);
+        }
       })
       .catch((error) => {
         console.error('Error fetching topics:', error);
@@ -78,10 +80,21 @@ export default function ComposerInput({
     try {
       setIsSubmitting(true);
 
+      if (!selectedTopic) {
+        throw new Error('Please select a topic');
+      }
+
+      const selectedTopicData = topics.find(
+        (topic) => topic.id === selectedTopic
+      );
+      if (!selectedTopicData) {
+        throw new Error('Invalid topic selected');
+      }
+
       const postData: CreatePost = {
         content: content.trim(),
         image: uploadedImage || null,
-        topicId: selectedTopic,
+        topicId: selectedTopicData.id,
       };
 
       const validatedData = createPostSchema.parse(postData);
@@ -181,7 +194,7 @@ export default function ComposerInput({
   return (
     <div
       className={cn(
-        `w-full flex gap-3 h-[64px] z-10 overflow-hidden items-center justify-between p-3 absolute left-0 bottom-0 rounded-[1.25rem] ${isInputFocused ? ' h-fit flex-col justify-start bg-neutral3-70 hover:bg-neutral2-5' : 'flex-row bg-neutral2-2'} transition-all duration-[0.2s]`,
+        `w-full flex gap-3 h-[64px] z-10 items-center justify-between p-3 absolute left-0 bottom-0 rounded-[1.25rem] ${isInputFocused ? ' h-fit flex-col justify-start bg-neutral3-70 hover:bg-neutral2-5' : 'flex-row bg-neutral2-2'} transition-all duration-[0.2s]`,
         className
       )}
     >
@@ -239,9 +252,7 @@ export default function ComposerInput({
         className={`${isInputFocused ? 'w-full' : 'hidden'} flex items-center mt-3`}
       >
         {isInputFocused && usedBy === 'post' ? (
-          <div id="tool-reply" className="flex gap-1 items-center mt-3 z-[999]">
-            {/* <EmojiButton /> */}
-
+          <div id="tool-reply" className="flex gap-1 items-center mt-3">
             <UploadImgButton
               fileInputRef={fileInputRef}
               setPreviewUrl={setPreviewUrl}
@@ -249,19 +260,18 @@ export default function ComposerInput({
               setIsUploading={setIsUploading}
             />
 
-            {/* <GifButton /> */}
-
-            <Dropdown
-              options={topics.map((topic) => ({
-                label: topic.name,
-                value: topic.id,
-                color: topic.color,
-              }))}
-              value={selectedTopic}
-              onChange={setSelectedTopic}
-              placeholder="Select an topic"
-              className="z-[9999]"
-            />
+            <div className="relative">
+              <Dropdown
+                options={topics.map((topic) => ({
+                  label: topic.name,
+                  value: topic.id,
+                  color: topic.color,
+                }))}
+                value={selectedTopic}
+                onChange={setSelectedTopic}
+                placeholder="Select an topic"
+              />
+            </div>
           </div>
         ) : (
           ''

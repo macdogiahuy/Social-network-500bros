@@ -47,7 +47,9 @@ export default function NewPost({ onBack }: INewPostProps) {
     getTopics()
       .then((response) => {
         setTopics(response.data);
-        setSelectedTopic(response.data[0].id);
+        if (response.data.length > 0) {
+          setSelectedTopic(response.data[0].id);
+        }
       })
       .catch((error) => {
         console.error('Error fetching topics:', error);

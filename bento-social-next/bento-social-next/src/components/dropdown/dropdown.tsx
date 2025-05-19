@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import React, { useLayoutEffect, useState } from 'react';
+import React from 'react';
 
 type DropdownOption = {
   label: string;
@@ -27,36 +27,8 @@ const Dropdown = ({
 }: DropdownProps) => {
   const [isOpen, setIsOpen] = React.useState(false);
   const dropdownRef = React.useRef<HTMLDivElement>(null);
-  const [dropdownPosition, setDropdownPosition] = useState<{
-    top: number;
-    left: number;
-  }>({ top: 0, left: 0 });
 
   const selectedOption = options.find((opt) => opt.value === value);
-
-  // Tính toán lại vị trí dropdown khi mở
-  useLayoutEffect(() => {
-    if (isOpen && dropdownRef.current) {
-      const rect = dropdownRef.current.getBoundingClientRect();
-      const spaceBelow = window.innerHeight - rect.bottom;
-      const spaceAbove = rect.top;
-
-      // Kiểm tra xem có đủ không gian bên dưới không
-      if (spaceBelow < 200 && spaceAbove > 200) {
-        // Hiển thị dropdown phía trên nếu không đủ không gian bên dưới
-        setDropdownPosition({
-          top: rect.top - 10,
-          left: rect.left,
-        });
-      } else {
-        // Mặc định hiển thị bên dưới
-        setDropdownPosition({
-          top: rect.bottom + 10,
-          left: rect.left,
-        });
-      }
-    }
-  }, [isOpen]);
 
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -98,13 +70,12 @@ const Dropdown = ({
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
         className={cn(
-          'w-fit p-2.5 inline-flex gap-3 items-center rounded-[0.75rem] group bg-neutral2-1 ml-4',
+          'w-fit p-2.5 inline-flex gap-3 items-center rounded-[0.75rem] group bg-neutral2-1',
           'after:content-[""] after:w-2 after:h-2',
           'after:border-r-2 after:border-b-2 after:border-secondary',
           'after:transform after:rotate-45 after:transition-transform after:duration-200',
           disabled && 'opacity-50 cursor-not-allowed',
           isOpen && 'after:rotate-[225deg] after:translate-y-1',
-
           className
         )}
       >
@@ -114,33 +85,30 @@ const Dropdown = ({
       </button>
 
       {isOpen && (
-        <div
-          className="fixed z-[99999] w-fit overflow-hidden"
-          style={{
-            top: `${dropdownPosition.top}px`,
-            left: `${dropdownPosition.left}px`,
-          }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="relative backdrop-blur-[50px] rounded-lg">
+        <div className="absolute top-full left-0 mt-2 w-[200px] z-[9999]">
+          <div className="bg-neutral2-1 border border-neutral2-10 rounded-lg shadow-lg">
             <div className="max-h-60 overflow-auto">
-              {options.map((option, index) => (
-                <div
-                  key={option.value}
-                  role="option"
-                  aria-selected={option.value === value}
-                  className={cn(
-                    'relative px-4 py-2 text-sm cursor-pointer',
-                    'bg-neutral2-1 hover:bg-neutral2-10 hover:text-primary text-primary',
-                    index === 0 && 'rounded-t-lg',
-                    index === options.length - 1 && 'rounded-b-lg',
-                    option.value === value && 'bg-neutral2-10 text-primary'
-                  )}
-                  onClick={() => handleOptionClick(option.value)}
-                >
-                  {renderOptionContent(option)}
-                </div>
-              ))}
+              {options.length === 0 ? (
+                <div className="px-4 py-2 text-sm text-gray-200">No topics</div>
+              ) : (
+                options.map((option, index) => (
+                  <div
+                    key={option.value}
+                    role="option"
+                    aria-selected={option.value === value}
+                    className={cn(
+                      'relative px-4 py-2 text-sm cursor-pointer text-gray-200',
+                      'hover:bg-neutral2-10 hover:text-primary',
+                      index === 0 && 'rounded-t-lg',
+                      index === options.length - 1 && 'rounded-b-lg',
+                      option.value === value && 'bg-neutral2-10 text-primary'
+                    )}
+                    onClick={() => handleOptionClick(option.value)}
+                  >
+                    {renderOptionContent(option)}
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>

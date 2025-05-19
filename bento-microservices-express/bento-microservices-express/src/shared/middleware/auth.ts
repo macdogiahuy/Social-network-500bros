@@ -8,7 +8,8 @@ export function authMiddleware(introspector: ITokenIntrospect): Handler {
       // 1. Get token from header
       const authHeader = req.headers.authorization;
       if (!authHeader) {
-        return res.status(401).json({ error: 'Access token is missing' });
+        res.status(401).json({ error: 'Access token is missing' });
+        return;
       }
 
       const [scheme, token] = authHeader.split(' ');
@@ -28,7 +29,7 @@ export function authMiddleware(introspector: ITokenIntrospect): Handler {
       // 3. Set requester to res.locals
       res.locals['requester'] = requester;
 
-      return next();
+      next();
     } catch (error) {
       next(error);
     }
