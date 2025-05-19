@@ -1,4 +1,5 @@
 import 'module-alias/register';
+import 'reflect-metadata';
 
 import { setupCommentLikeModule } from '@modules/comment-like/module';
 import { setupCommentModule, setupCommentRedisConsumer } from '@modules/comment/module';
@@ -44,7 +45,7 @@ async function bootServer(port: number) {
 
     const serviceCtx: ServiceContext = {
       mdlFactory: MdlFactory,
-      eventPublisher: RedisClient.getInstance(),
+      eventPublisher: RedisClient.getInstance()
     };
 
     const userModule = setupUserModule(serviceCtx);

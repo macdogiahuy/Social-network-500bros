@@ -55,6 +55,7 @@ model Comments {
   status     comments_status @default(pending) @map("status")
   createdAt  DateTime        @default(now()) @map("created_at") @db.DateTime(6)
   updatedAt  DateTime?       @default(now()) @map("updated_at") @db.DateTime(6)
+  post       Posts          @relation(fields: [postId], references: [id])
 
   @@index([parentId], map: "parent_id")
   @@index([postId], map: "post_id")
@@ -92,6 +93,7 @@ model PostLikes {
   postId    String   @map("post_id") @db.VarChar(36)
   userId    String   @map("user_id") @db.VarChar(36)
   createdAt DateTime @map("created_at") @db.DateTime(6)
+  post      Posts    @relation(fields: [postId], references: [id])
 
   @@id([postId, userId])
   @@index([userId], map: "user_id")
@@ -130,6 +132,9 @@ model Posts {
   type         posts_type? @default(text) @map("type")
   createdAt    DateTime    @default(now()) @map("created_at") @db.Timestamp(0)
   updatedAt    DateTime    @default(now()) @map("updated_at") @db.Timestamp(0)
+  author       Users       @relation(fields: [authorId], references: [id])
+  comments     Comments[]
+  likes        PostLikes[]
 
   @@index([authorId], map: "author_id")
   @@index([isFeatured], map: "is_featured")
@@ -208,10 +213,46 @@ model Users {
   status        users_status? @default(active) @map("status")
   createdAt     DateTime      @default(now()) @map("created_at") @db.Timestamp(0)
   updatedAt     DateTime      @default(now()) @map("updated_at") @db.Timestamp(0)
+  
+  // Add these relations
+  posts                 Posts[]              @relation
+  sentMessages          Message[]            @relation("SentMessages")
+  sentConversations     Conversation[]       @relation("SentConversations")
+  receivedConversations Conversation[]       @relation("ReceivedConversations")
 
   @@index([role], map: "role")
   @@index([status], map: "status")
   @@map("users")
+}
+
+model Conversation {
+  id          String    @id @map("id") @db.VarChar(36)
+  senderId    String    @map("sender_id") @db.VarChar(36)
+  receiverId  String    @map("receiver_id") @db.VarChar(36)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt   DateTime  @default(now()) @map("updated_at") @db.Timestamp(0)
+  messages    Message[]
+  sender      Users     @relation("SentConversations", fields: [senderId], references: [id])
+  receiver    Users     @relation("ReceivedConversations", fields: [receiverId], references: [id])
+
+  @@index([senderId])
+  @@index([receiverId])
+  @@map("conversations")
+}
+
+model Message {
+  id             String       @id @map("id") @db.VarChar(36)
+  content        String       @map("content") @db.Text
+  conversationId String       @map("conversation_id") @db.VarChar(36)
+  senderId       String       @map("sender_id") @db.VarChar(36)
+  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt      DateTime     @default(now()) @map("updated_at") @db.Timestamp(0)
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         Users        @relation("SentMessages", fields: [senderId], references: [id])
+
+  @@index([conversationId])
+  @@index([senderId])
+  @@map("messages")
 }
 
 enum notifications_action {
