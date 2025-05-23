@@ -1,11 +1,11 @@
-import { config } from "@shared/components/config";
-import { ServiceContext } from "@shared/interface";
-import { UserRPCClient } from "@shared/rpc/user-rpc";
-import { MysqlPostRepository } from "./infras/repository/mysql";
-import { PostLikedRPC, PostSavedRPC, TopicQueryRPC } from "./infras/repository/rpc";
-import { PostHttpService } from "./infras/transport/http-service";
-import { RedisPostConsumer } from "./infras/transport/redis-consumer";
-import { PostUsecase } from "./usecase";
+import { config } from '@shared/components/config';
+import { ServiceContext } from '@shared/interface';
+import { UserRPCClient } from '@shared/rpc/user-rpc';
+import { MysqlPostRepository } from './infras/repository/mysql';
+import { PostLikedRPC, PostSavedRPC, TopicQueryRPC } from './infras/repository/rpc';
+import { PostHttpService } from './infras/transport/http-service';
+import { RedisPostConsumer } from './infras/transport/redis-consumer';
+import { PostUsecase } from './usecase';
 
 export const setupPostModule = (sctx: ServiceContext) => {
   const mdlFactory = sctx.mdlFactory;

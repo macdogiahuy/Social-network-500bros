@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client';
 import prisma from '@shared/components/prisma';
+import crypto from 'crypto';
 import { Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import { singleton } from 'tsyringe';
@@ -10,16 +11,66 @@ export class PostController {
 
   async createPost(req: Request, res: Response) {
     try {
-      const userId = res.locals.requester?.id;
+      console.log('Request headers:', req.headers);
+      console.log('Requester:', res.locals.requester);
+
+      const userId = res.locals.requester?.sub;
+      console.log('User ID from token:', userId);
+
       if (!userId) {
+        console.log('Unauthorized: No user ID found in token');
         return res.status(StatusCodes.UNAUTHORIZED).json({
           error: 'Unauthorized'
         });
       }
 
-      // Implement create post logic
-      return res.status(StatusCodes.NOT_IMPLEMENTED).json({
-        error: 'Not implemented'
+      const { content, image, topicId } = req.body;
+      console.log('Request body:', { content, image, topicId });
+
+      if (!content?.trim()) {
+        return res.status(StatusCodes.BAD_REQUEST).json({
+          error: 'Content is required'
+        });
+      }
+
+      if (!topicId) {
+        return res.status(StatusCodes.BAD_REQUEST).json({
+          error: 'Topic is required'
+        });
+      }
+
+      const post = await prisma.posts.create({
+        data: {
+          id: crypto.randomUUID(),
+          content: content.trim(),
+          image: image || null,
+          authorId: userId,
+          topicId,
+          type: image ? 'media' : 'text'
+        },
+        include: {
+          author: {
+            select: {
+              id: true,
+              username: true,
+              firstName: true,
+              lastName: true,
+              avatar: true
+            }
+          }
+        }
+      });
+
+      // Get the topic separately since it's not directly included in the Posts model
+      const topic = await prisma.topics.findUnique({
+        where: { id: topicId }
+      });
+
+      return res.status(StatusCodes.CREATED).json({
+        data: {
+          ...post,
+          topic
+        }
       });
     } catch (error) {
       console.error('Error creating post:', error);

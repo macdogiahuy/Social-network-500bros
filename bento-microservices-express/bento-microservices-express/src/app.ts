@@ -6,7 +6,6 @@ import morgan from 'morgan';
 
 import commentRoutes from '@modules/comment/comment.route';
 import followingRoutes from '@modules/following/following.route';
-import postRoutes from '@modules/post/post.route';
 import userRoutes from '@modules/user/user.route';
 
 function buildApp(): Application {
@@ -27,7 +26,6 @@ function buildApp(): Application {
 
   // Routes
   app.use('/v1/users', userRoutes);
-  app.use('/v1/posts', postRoutes);
   app.use('/v1/comments', commentRoutes);
   app.use('/v1/following', followingRoutes);
 
