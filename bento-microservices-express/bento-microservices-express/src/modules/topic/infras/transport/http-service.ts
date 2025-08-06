@@ -1,17 +1,16 @@
 import { ITopicRepository } from '@modules/topic/interface/interface';
 import { TopicUsecase } from '@modules/topic/usecase';
 import { MdlFactory } from '@shared/interface';
-import { pagingDTOSchema } from "@shared/model";
+import { pagingDTOSchema } from '@shared/model';
 import { ErrNotFound } from '@shared/utils/error';
 import { paginatedResponse, successResponse } from '@shared/utils/utils';
 import { NextFunction, Request, Response, Router } from 'express';
 
-
 export class TopicHttpService {
   constructor(
     private readonly usecase: TopicUsecase,
-    private readonly topicRepo: ITopicRepository,
-  ) { }
+    private readonly topicRepo: ITopicRepository
+  ) {}
 
   async createTopicAPI(req: Request, res: Response) {
     const data = await this.usecase.create(req.body);
@@ -38,6 +37,14 @@ export class TopicHttpService {
     paginatedResponse(data, {}, res);
   }
 
+  async searchTopicsAPI(req: Request, res: Response) {
+    const paging = pagingDTOSchema.parse(req.query);
+    const query = (req.query.q as string) || '';
+
+    const data = await this.usecase.search(query, paging);
+    paginatedResponse(data, {}, res);
+  }
+
   // RPC APIs
 
   async listByIdsAPI(req: Request, res: Response) {
@@ -59,7 +66,6 @@ export class TopicHttpService {
     res.status(200).json({ data: data[0] });
   }
 
-
   getRoutes(mdlFactory: MdlFactory): Router {
     const router = Router();
 
@@ -67,6 +73,7 @@ export class TopicHttpService {
     router.patch('/topics/:id', mdlFactory.auth, this.updateTopicAPI.bind(this));
     router.delete('/topics/:id', mdlFactory.auth, this.deleteTopicAPI.bind(this));
     router.get('/topics', this.listTopicsAPI.bind(this));
+    router.get('/topics/search', this.searchTopicsAPI.bind(this));
 
     // RPC APIs
     router.post('/rpc/topics/list-by-ids', this.listByIdsAPI.bind(this));
@@ -74,5 +81,4 @@ export class TopicHttpService {
 
     return router;
   }
-
 }

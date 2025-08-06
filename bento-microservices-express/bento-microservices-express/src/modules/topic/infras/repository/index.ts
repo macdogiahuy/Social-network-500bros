@@ -1,7 +1,7 @@
-import { ITopicRepository } from "@modules/topic/interface/interface";
-import { Topic, TopicCondDTO, TopicUpdateDTO } from "@modules/topic/model/topic";
-import prisma from "@shared/components/prisma";
-import { Paginated, PagingDTO } from "@shared/model";
+import { ITopicRepository } from '@modules/topic/interface/interface';
+import { Topic, TopicCondDTO, TopicUpdateDTO } from '@modules/topic/model/topic';
+import prisma from '@shared/components/prisma';
+import { Paginated, PagingDTO } from '@shared/model';
 
 export class PrismaTopicRepository implements ITopicRepository {
   async insert(data: Topic): Promise<boolean> {
@@ -47,9 +47,32 @@ export class PrismaTopicRepository implements ITopicRepository {
       data: data as Topic[],
       paging,
       total
-    }
+    };
   }
 
+  async search(query: string, paging: PagingDTO): Promise<Paginated<Topic>> {
+    const skip = (paging.page - 1) * paging.limit;
+
+    // Convert query to lowercase for case-insensitive search
+    const lowerQuery = query.toLowerCase();
+
+    // First get all topics
+    const allTopics = await prisma.topics.findMany();
+
+    // Filter topics where name contains the query (case-insensitive)
+    const filteredTopics = allTopics.filter((topic) => topic.name.toLowerCase().includes(lowerQuery));
+
+    const total = filteredTopics.length;
+
+    // Apply pagination manually
+    const data = filteredTopics.sort((a, b) => a.name.localeCompare(b.name)).slice(skip, skip + paging.limit);
+
+    return {
+      data: data as Topic[],
+      paging,
+      total
+    };
+  }
 
   async increateTopicPostCount(id: string, field: string, step: number): Promise<boolean> {
     await prisma.topics.update({
@@ -61,7 +84,7 @@ export class PrismaTopicRepository implements ITopicRepository {
           increment: step
         }
       }
-    })
+    });
     return true;
   }
 
@@ -75,14 +98,12 @@ export class PrismaTopicRepository implements ITopicRepository {
           decrement: step
         }
       }
-
-    })
+    });
     return true;
-  };
-  
+  }
+
   async findByIds(ids: string[]): Promise<Topic[]> {
     const topics = await prisma.topics.findMany({ where: { id: { in: ids } } });
     return topics as Topic[];
   }
 }
-

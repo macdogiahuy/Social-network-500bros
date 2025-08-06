@@ -19,9 +19,37 @@ export const setupMediaModule = () => {
       cb(null, `${prefix}_${file.originalname}`);
     }
   });
-  const upload = multer({ storage });
 
-  router.post('/upload-file', upload.single('file'), httpService.uploadMediaAPI.bind(httpService));
+  const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+    // Check if file exists and is an image
+    if (!file) {
+      cb(new Error('No file uploaded'));
+      return;
+    }
+
+    if (!file.mimetype.startsWith('image/')) {
+      cb(new Error('Only images are allowed'));
+      return;
+    }
+
+    cb(null, true);
+  };
+
+  const upload = multer({
+    storage,
+    fileFilter,
+    limits: {
+      fileSize: 5 * 1024 * 1024 // 5MB
+    }
+  });
+
+  router.post('/upload-file', upload.single('file'), async (req, res, next) => {
+    try {
+      await httpService.uploadMediaAPI(req, res);
+    } catch (error) {
+      next(error);
+    }
+  });
 
   return router;
 };

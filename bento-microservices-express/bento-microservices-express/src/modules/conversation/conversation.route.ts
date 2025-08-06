@@ -1,3 +1,4 @@
+import { upload } from '@shared/services/file-upload.service';
 import { Request, Response, Router } from 'express';
 import { container } from 'tsyringe';
 import { ConversationController } from './conversation.controller';
@@ -11,39 +12,35 @@ router.get('/test', (req: Request, res: Response) => {
 });
 
 // Get all conversations for the current user
-router.get('/', async (req: Request, res: Response) => {
+router.get('/', async (req: Request, res: Response, next: Function) => {
   try {
     await conversationController.getConversations(req, res);
   } catch (error) {
-    console.error('Error getting conversations:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    next(error);
   }
 });
 
-router.post('/initiate', async (req: Request, res: Response) => {
+router.post('/initiate', async (req: Request, res: Response, next: Function) => {
   try {
     await conversationController.initiateConversation(req, res);
   } catch (error) {
-    console.error('Error initiating conversation:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    next(error);
   }
 });
 
-router.get('/:conversationId/messages', async (req: Request, res: Response) => {
+router.get('/:conversationId/messages', async (req: Request, res: Response, next: Function) => {
   try {
     await conversationController.getMessages(req, res);
   } catch (error) {
-    console.error('Error getting messages:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    next(error);
   }
 });
 
-router.post('/:conversationId/messages', async (req: Request, res: Response) => {
+router.post('/:conversationId/messages', upload.single('file'), async (req: Request, res: Response, next: Function) => {
   try {
     await conversationController.sendMessage(req, res);
   } catch (error) {
-    console.error('Error sending message:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    next(error);
   }
 });
 

@@ -5,11 +5,23 @@ import { AppError, ErrNotFound } from '@shared/utils/error';
 import bcrypt from 'bcrypt';
 import { v7 } from 'uuid';
 import { IUserUseCase } from '../interface';
-import { Status, User, UserCondDTO, userCondDTOSchema, UserLoginDTO, userLoginDTOSchema, UserRegistrationDTO, userRegistrationDTOSchema, UserUpdateDTO, userUpdateDTOSchema, userUpdateProfileDTOSchema } from '../model';
+import {
+  Status,
+  User,
+  UserCondDTO,
+  userCondDTOSchema,
+  UserLoginDTO,
+  userLoginDTOSchema,
+  UserRegistrationDTO,
+  userRegistrationDTOSchema,
+  UserUpdateDTO,
+  userUpdateDTOSchema,
+  userUpdateProfileDTOSchema
+} from '../model';
 import { ErrInvalidToken, ErrInvalidUsernameAndPassword, ErrUserInactivated, ErrUsernameExisted } from '../model/error';
 
 export class UserUseCase implements IUserUseCase {
-  constructor(private readonly repository: IRepository<User, UserCondDTO, UserUpdateDTO>) { }
+  constructor(private readonly repository: IRepository<User, UserCondDTO, UserUpdateDTO>) {}
 
   async profile(userId: string): Promise<User> {
     const user = await this.repository.findById(userId);
@@ -47,21 +59,24 @@ export class UserUseCase implements IUserUseCase {
       // 1. Find user with username from DTO
       const user = await this.repository.findByCond({ username: dto.username });
       if (!user) {
-        throw AppError.from(ErrInvalidUsernameAndPassword, 400)
-          .withLog(`Login failed: Username '${dto.username}' not found`);
+        throw AppError.from(ErrInvalidUsernameAndPassword, 400).withLog(
+          `Login failed: Username '${dto.username}' not found`
+        );
       }
 
       // 2. Check user status first
       if (user.status === Status.DELETED || user.status === Status.INACTIVE) {
-        throw AppError.from(ErrUserInactivated, 400)
-          .withLog(`Login failed: User '${dto.username}' is ${user.status.toLowerCase()}`);
+        throw AppError.from(ErrUserInactivated, 400).withLog(
+          `Login failed: User '${dto.username}' is ${user.status.toLowerCase()}`
+        );
       }
 
       // 3. Check password
       const isMatch = await bcrypt.compare(`${dto.password}.${user.salt}`, user.password);
       if (!isMatch) {
-        throw AppError.from(ErrInvalidUsernameAndPassword, 400)
-          .withLog(`Login failed: Invalid password for user '${dto.username}'`);
+        throw AppError.from(ErrInvalidUsernameAndPassword, 400).withLog(
+          `Login failed: Invalid password for user '${dto.username}'`
+        );
       }
 
       authenticatedUser = user;
@@ -70,14 +85,12 @@ export class UserUseCase implements IUserUseCase {
         throw error;
       }
       console.error('Login error:', error);
-      throw AppError.from(ErrInvalidUsernameAndPassword, 400)
-        .withLog('Login failed: Internal server error');
+      throw AppError.from(ErrInvalidUsernameAndPassword, 400).withLog('Login failed: Internal server error');
     }
 
     // 4. Generate and return token
     if (!authenticatedUser) {
-      throw AppError.from(ErrInvalidUsernameAndPassword, 400)
-        .withLog('Login failed: User authentication error');
+      throw AppError.from(ErrInvalidUsernameAndPassword, 400).withLog('Login failed: User authentication error');
     }
 
     const token = jwtProvider.generateToken({
@@ -97,7 +110,6 @@ export class UserUseCase implements IUserUseCase {
     }
 
     // 2. Gen salt and hash password
-    // const salt = generateRandomString(20);
     const salt = bcrypt.genSaltSync(8);
     const hashPassword = await bcrypt.hash(`${dto.password}.${salt}`, 10);
 
@@ -105,15 +117,14 @@ export class UserUseCase implements IUserUseCase {
     const newId = v7();
     const newUser: User = {
       ...dto,
+      email: undefined,
       password: hashPassword,
       id: newId,
       status: Status.ACTIVE,
       salt: salt,
       role: UserRole.USER,
       createdAt: new Date(),
-      updatedAt: new Date(),
-      followerCount: 0,
-      postCount: 0,
+      updatedAt: new Date()
     };
 
     // 4. Insert new user to database
@@ -197,11 +208,9 @@ export class UserUseCase implements IUserUseCase {
   async listByIds(ids: string[]): Promise<User[]> {
     const users = await this.repository.listByIds(ids);
 
-    return users.map(user => {
+    return users.map((user) => {
       const { password, salt, ...rest } = user;
       return rest as User;
     });
   }
-
-
 }

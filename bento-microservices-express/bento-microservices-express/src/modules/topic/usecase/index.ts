@@ -1,12 +1,19 @@
-import { Paginated, PagingDTO } from "@shared/model";
-import { AppError } from "@shared/utils/error";
-import { v7 } from "uuid";
-import { ITopicRepository, ITopicUsecase } from "../interface/interface";
-import { ErrTopicNameAlreadyExists, ErrTopicNotFound } from "../model/error";
-import { Topic, TopicCondDTO, topicCondDTOSchema, TopicCreationDTO, topicCreationDTOSchema, TopicUpdateDTO } from "../model/topic";
+import { Paginated, PagingDTO } from '@shared/model';
+import { AppError } from '@shared/utils/error';
+import { v7 } from 'uuid';
+import { ITopicRepository, ITopicUsecase } from '../interface/interface';
+import { ErrTopicNameAlreadyExists, ErrTopicNotFound } from '../model/error';
+import {
+  Topic,
+  TopicCondDTO,
+  topicCondDTOSchema,
+  TopicCreationDTO,
+  topicCreationDTOSchema,
+  TopicUpdateDTO
+} from '../model/topic';
 
 export class TopicUsecase implements ITopicUsecase {
-  constructor(private readonly topicRepo: ITopicRepository) { }
+  constructor(private readonly topicRepo: ITopicRepository) {}
 
   async create(dto: TopicCreationDTO): Promise<string> {
     const data = topicCreationDTOSchema.parse(dto);
@@ -24,7 +31,7 @@ export class TopicUsecase implements ITopicUsecase {
       postCount: 0,
       color: data.color,
       createdAt: new Date(),
-      updatedAt: new Date(),
+      updatedAt: new Date()
     };
 
     await this.topicRepo.insert(topic);
@@ -41,7 +48,6 @@ export class TopicUsecase implements ITopicUsecase {
 
     await this.topicRepo.update(id, data);
     return true;
-
   }
 
   async delete(id: string): Promise<boolean> {
@@ -51,12 +57,20 @@ export class TopicUsecase implements ITopicUsecase {
     }
     await this.topicRepo.delete(id);
 
-   
     return true;
   }
 
   async list(condition: TopicCondDTO, paging: PagingDTO): Promise<Paginated<Topic>> {
     const dto = topicCondDTOSchema.parse(condition);
     return await this.topicRepo.list(dto, paging);
+  }
+
+  async search(query: string, paging: PagingDTO): Promise<Paginated<Topic>> {
+    if (!query || query.trim() === '') {
+      // If query is empty, return all topics
+      return await this.list({}, paging);
+    }
+
+    return await this.topicRepo.search(query.trim(), paging);
   }
 }

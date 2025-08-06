@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE `users` ADD COLUMN `follower_count` INTEGER NOT NULL DEFAULT 0,
+    ADD COLUMN `post_count` INTEGER NOT NULL DEFAULT 0;

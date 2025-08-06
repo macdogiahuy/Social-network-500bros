@@ -231,6 +231,7 @@ export class ConversationController {
       const userId = res.locals.requester?.sub;
       const { conversationId } = req.params;
       const { content } = req.body;
+      const file = req.file;
 
       if (!userId) {
         return res.status(StatusCodes.UNAUTHORIZED).json({
@@ -238,9 +239,9 @@ export class ConversationController {
         });
       }
 
-      if (!content?.trim()) {
+      if (!content?.trim() && !file) {
         return res.status(StatusCodes.BAD_REQUEST).json({
-          error: 'Message content is required'
+          error: 'Message content or file is required'
         });
       }
 
@@ -262,9 +263,15 @@ export class ConversationController {
       const message = await prisma.message.create({
         data: {
           id: crypto.randomUUID(),
-          content: content.trim(),
+          content: content?.trim(),
           conversation: { connect: { id: conversationId } },
-          sender: { connect: { id: userId } }
+          sender: { connect: { id: userId } },
+          ...(file && {
+            fileUrl: `/uploads/${file.filename}`,
+            fileName: file.originalname,
+            fileSize: file.size,
+            fileType: file.mimetype
+          })
         },
         include: {
           sender: {
