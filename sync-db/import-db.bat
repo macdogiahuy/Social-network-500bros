@@ -1,4 +1,5 @@
 @echo off
+setlocal enabledelayedexpansion
 echo Database Import Script
 echo -------------------
 
@@ -13,23 +14,47 @@ if not exist ..\sync-db\dumps (
     exit /b 1
 )
 
-echo Available database dumps:
+echo Finding the newest database dump...
 echo.
-dir /b ..\sync-db\dumps\*.sql
-if errorlevel 1 (
-    echo No SQL dump files found in dumps directory
-    echo Please copy a database dump file to sync-db\dumps directory
+set "NEWEST_DUMP="
+set "NEWEST_DATE=0"
+
+REM Check in the dumps directory
+for %%F in (..\sync-db\dumps\*.sql) do (
+    for %%A in (%%F) do (
+        if %%~tA gtr !NEWEST_DATE! (
+            set "NEWEST_DATE=%%~tA"
+            set "NEWEST_DUMP=%%~nxF"
+            set "DUMP_PATH=..\sync-db\dumps"
+        )
+    )
+)
+
+REM Also check in the data directory
+for %%F in (..\data\social_network_*.sql) do (
+    for %%A in (%%F) do (
+        if %%~tA gtr !NEWEST_DATE! (
+            set "NEWEST_DATE=%%~tA"
+            set "NEWEST_DUMP=%%~nxF"
+            set "DUMP_PATH=..\data"
+        )
+    )
+)
+
+if "!NEWEST_DUMP!"=="" (
+    echo No SQL dump files found in dumps or data directories
+    echo Please copy a database dump file to sync-db\dumps or data directory
     echo.
     echo Press any key to exit...
     pause >nul
     exit /b 1
 )
 
-echo.
-set /p DUMP_FILE="Enter the dump filename (from above list): "
+echo Found newest dump: !NEWEST_DUMP! in !DUMP_PATH!
+set "DUMP_FILE=!NEWEST_DUMP!"
 
-if not exist "..\sync-db\dumps\%DUMP_FILE%" (
-    echo Error: File %DUMP_FILE% not found
+if not exist "!DUMP_PATH!\!DUMP_FILE!" (
+    echo Error: File !DUMP_FILE! not found in !DUMP_PATH!
     echo.
     echo Press any key to exit...
     pause >nul
@@ -58,8 +83,8 @@ if errorlevel 1 (
 )
 
 echo.
-echo Importing database from %DUMP_FILE%...
-docker exec -i mysql-bento mysql -u root -p12345678 social_network < "..\sync-db\dumps\%DUMP_FILE%"
+echo Importing database from !DUMP_FILE!...
+docker exec -i mysql-bento mysql -u root -p12345678 social_network < "!DUMP_PATH!\!DUMP_FILE!"
 
 if errorlevel 1 (
     echo Error: Database import failed
