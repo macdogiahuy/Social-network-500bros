@@ -23,17 +23,6 @@ export class NotificationController {
         },
         orderBy: {
           createdAt: 'desc'
-        },
-        include: {
-          actor: {
-            select: {
-              id: true,
-              username: true,
-              firstName: true,
-              lastName: true,
-              avatar: true
-            }
-          }
         }
       });
 

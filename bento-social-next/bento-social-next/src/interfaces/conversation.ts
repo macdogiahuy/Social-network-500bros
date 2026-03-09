@@ -5,6 +5,11 @@ export interface IMessage {
   content: string;
   conversationId: string;
   senderId: string;
+  sender?: IUserSimple;
+  fileUrl?: string;
+  fileName?: string;
+  fileSize?: number;
+  fileType?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -12,10 +17,17 @@ export interface IMessage {
 export interface IConversation {
   id: string;
   senderId: string;
-  receiverId: string;
+  receiverId?: string;
   sender: IUserSimple;
-  receiver: IUserSimple;
+  receiver?: IUserSimple;
   messages?: IMessage[];
   createdAt: string;
   updatedAt: string;
+  type?: 'DIRECT' | 'GROUP';
+  name?: string;
+  image?: string;
+  participants?: {
+    userId: string;
+    user: IUserSimple;
+  }[];
 }

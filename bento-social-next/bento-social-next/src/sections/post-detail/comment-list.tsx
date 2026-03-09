@@ -1,4 +1,3 @@
-import React from 'react';
 
 import { Post } from '@/components/post';
 import { IChilrenComment, ICommment } from '@/interfaces/comment';
@@ -24,7 +23,7 @@ export default function CommentList({
         <ul className={cn(`w-full overflow-y-auto mt-2`, className)}>
           {comments.map((comment: ICommment) => (
             <li key={comment.id} className="mb-2">
-              {comment.children.length === 0 ? (
+              {(!comment.replies || comment.replies.length === 0) ? (
                 <Post
                   data={comment}
                   className="bg-neutral2-2"
@@ -38,12 +37,12 @@ export default function CommentList({
                       data={comment}
                     />
                   </li>
-                  {comment.children?.map(
+                  {comment.replies?.map(
                     (reply: IChilrenComment, index: number) => (
                       <li key={reply.id} className=" ">
                         <Post
                           className={`rounded-none ${
-                            index === (comment.children?.length ?? 0) - 1
+                            index === (comment.replies?.length ?? 0) - 1
                               ? 'rounded-tl-none rounded-tr-none rounded-bl-[1.25rem] rounded-br-[1.25rem]'
                               : 'after:content-[""] after:absolute after:top-[64px] after:left-[33.5px] after:bottom-0 after:w-[1.5px] after:bg-neutral2-10 bg-none '
                           }`}

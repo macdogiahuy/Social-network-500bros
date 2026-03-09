@@ -152,4 +152,53 @@ export class UserController {
       });
     }
   }
+  async getUsers(req: Request, res: Response) {
+    try {
+      const token = req.headers.authorization?.split(' ')[1];
+      if (!token) {
+        return res.status(StatusCodes.UNAUTHORIZED).json({
+          error: 'Access token is missing'
+        });
+      }
+
+      const payload = await jwtProvider.verifyToken(token);
+      if (!payload) {
+        return res.status(StatusCodes.UNAUTHORIZED).json({
+          error: 'Invalid token'
+        });
+      }
+
+      const { sub } = payload;
+      const { search } = req.query;
+
+      const users = await prisma.users.findMany({
+        where: {
+          id: { not: sub },
+          ...(search && {
+            OR: [
+              { username: { contains: search as string } },
+              { firstName: { contains: search as string } },
+              { lastName: { contains: search as string } }
+            ]
+          })
+        },
+        select: {
+          id: true,
+          username: true,
+          firstName: true,
+          lastName: true,
+          avatar: true
+        }
+      });
+
+      return res.status(StatusCodes.OK).json({
+        data: users
+      });
+    } catch (error) {
+      console.error('Error getting users:', error);
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        error: 'Internal server error'
+      });
+    }
+  }
 }

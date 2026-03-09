@@ -47,6 +47,14 @@ const upload = multer({
 const router = Router();
 const userController = container.resolve(UserController);
 
+router.get('/users', async (req, res, next) => {
+  try {
+    await userController.getUsers(req, res);
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.get('/profile', async (req, res, next) => {
   try {
     await userController.getProfile(req, res);

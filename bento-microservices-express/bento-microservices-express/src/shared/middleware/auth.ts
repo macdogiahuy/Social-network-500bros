@@ -1,5 +1,5 @@
 import { ITokenIntrospect, Requester } from '@shared/interface';
-import { ErrTokenInvalid } from '@shared/utils/error';
+import { AppError } from '@shared/utils/error';
 import { Handler, NextFunction, Request, Response } from 'express';
 
 export function authMiddleware(introspector: ITokenIntrospect): Handler {
@@ -14,14 +14,14 @@ export function authMiddleware(introspector: ITokenIntrospect): Handler {
 
       const [scheme, token] = authHeader.split(' ');
       if (!token || scheme.toLowerCase() !== 'bearer') {
-        throw ErrTokenInvalid.withLog('Invalid token format. Use: Bearer <token>');
+        throw AppError.from(new Error('Token is invalid'), 401).withLog('Invalid token format. Use: Bearer <token>');
       }
 
       // 2. Introspect token
       const { payload, error, isOk } = await introspector.introspect(token);
 
       if (!isOk) {
-        throw ErrTokenInvalid.withLog('Token parse failed').withLog(error?.message || '');
+        throw AppError.from(new Error('Token is invalid'), 401).withLog('Token parse failed').withLog(error?.message || '');
       }
 
       const requester = payload as Requester;

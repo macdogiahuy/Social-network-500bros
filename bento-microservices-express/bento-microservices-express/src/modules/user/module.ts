@@ -1,6 +1,4 @@
 import { ServiceContext, UserRole } from '@shared/interface';
-import { authRateLimiter } from '@shared/middleware/rate-limiter';
-import { validateBody } from '@shared/middleware/validation';
 import { Router } from 'express';
 
 import { PrismaUserCommandRepository, PrismaUserQueryRepository, PrismaUserRepository } from './infras/repository';
@@ -10,8 +8,6 @@ import { UserHTTPService } from './infras/transport';
 import { PasswordResetHttpService } from './infras/transport/password-reset-http.service';
 import { RedisUserConsumer } from './infras/transport/redis-consumer';
 import { UserStatsHttpService } from './infras/transport/user-stats-http.service';
-import { userLoginDTOSchema, userRegistrationDTOSchema } from './model';
-import { requestResetDTOSchema, resetPasswordDTOSchema } from './model/reset-password';
 import { UserUseCase } from './usecase';
 import { PasswordResetUsecase } from './usecase/password-reset.usecase';
 import { UserStatsUsecase } from './usecase/user-stats.usecase';
@@ -38,36 +34,14 @@ export const setupUserModule = (sctx: ServiceContext) => {
   const mdlFactory = sctx.mdlFactory;
   const adminChecker = mdlFactory.allowRoles([UserRole.ADMIN]);
 
-  router.post(
-    '/register',
-    authRateLimiter,
-    validateBody(userRegistrationDTOSchema),
-    httpService.registerAPI.bind(httpService)
-  );
-
-  router.post(
-    '/authenticate',
-    authRateLimiter,
-    validateBody(userLoginDTOSchema),
-    httpService.loginAPI.bind(httpService)
-  );
-
+  router.post('/register', httpService.registerAPI.bind(httpService));
+  router.post('/authenticate', httpService.loginAPI.bind(httpService));
   router.get('/profile', httpService.profileAPI.bind(httpService));
   router.patch('/profile', httpService.updateProfileAPI.bind(httpService));
 
   // Password reset routes
-  router.post(
-    '/forgot-password',
-    authRateLimiter,
-    validateBody(requestResetDTOSchema),
-    passwordResetHttpService.requestResetAPI.bind(passwordResetHttpService)
-  );
-  router.post(
-    '/reset-password',
-    authRateLimiter,
-    validateBody(resetPasswordDTOSchema),
-    passwordResetHttpService.resetPasswordAPI.bind(passwordResetHttpService)
-  );
+  router.post('/forgot-password', passwordResetHttpService.requestResetAPI.bind(passwordResetHttpService));
+  router.post('/reset-password', passwordResetHttpService.resetPasswordAPI.bind(passwordResetHttpService));
 
   // User stats route
   router.get('/users/:userId/stats', userStatsHttpService.getUserStatsAPI.bind(userStatsHttpService));

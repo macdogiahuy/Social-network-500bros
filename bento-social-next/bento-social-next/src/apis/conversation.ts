@@ -4,10 +4,13 @@ import axiosInstance from '../utils/axios';
 
 const VERSION_PREFIX = '/v1';
 
-export const initiateConversation = async (
-  receiverId: string
-): Promise<{ data: IConversation }> => {
-  console.log('Initiating conversation with receiverId:', receiverId);
+export const initiateConversation = async (data: {
+  receiverId?: string;
+  userIds?: string[];
+  name?: string;
+  image?: string;
+}): Promise<{ data: IConversation }> => {
+  console.log('Initiating conversation with data:', data);
   console.log('Current token:', sessionStorage.getItem('token'));
   console.log(
     'Current Authorization header:',
@@ -17,9 +20,7 @@ export const initiateConversation = async (
   try {
     const response = await axiosInstance.post(
       `${VERSION_PREFIX}/conversations/initiate`,
-      {
-        receiverId,
-      }
+      data
     );
     console.log('Conversation initiation response:', response);
     return response.data;
@@ -36,14 +37,33 @@ export const initiateConversation = async (
 
 export const sendMessage = async (
   conversationId: string,
-  content: string
+  content: string,
+  file?: File
 ): Promise<{ data: IMessage }> => {
-  const response = await axiosInstance.post(
-    `${VERSION_PREFIX}/conversations/${conversationId}/messages`,
-    {
-      content,
-    }
-  );
+  let response;
+
+  if (file) {
+    const formData = new FormData();
+    formData.append('content', content || '');
+    formData.append('file', file);
+
+    response = await axiosInstance.post(
+      `${VERSION_PREFIX}/conversations/${conversationId}/messages`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+  } else {
+    response = await axiosInstance.post(
+      `${VERSION_PREFIX}/conversations/${conversationId}/messages`,
+      {
+        content,
+      }
+    );
+  }
   return response.data;
 };
 
@@ -61,4 +81,12 @@ export const getConversationMessages = async (
     `${VERSION_PREFIX}/conversations/${conversationId}/messages`
   );
   return response.data;
+};
+
+export const deleteConversation = async (
+  conversationId: string
+): Promise<void> => {
+  await axiosInstance.delete(
+    `${VERSION_PREFIX}/conversations/${conversationId}`
+  );
 };

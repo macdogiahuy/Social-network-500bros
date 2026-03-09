@@ -1,4 +1,6 @@
 import prisma from '@shared/components/prisma';
+import { RedisClient } from '@shared/components/redis-pubsub/redis';
+import { AppEvent } from '@shared/model/event';
 import crypto from 'crypto';
 import { Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
@@ -20,7 +22,7 @@ export class ConversationController {
 
       const conversations = await prisma.conversation.findMany({
         where: {
-          OR: [{ senderId: userId }, { receiverId: userId }]
+          OR: [{ senderId: userId }, { receiverId: userId }, { participants: { some: { userId } } }]
         },
         include: {
           sender: {
@@ -39,6 +41,19 @@ export class ConversationController {
               firstName: true,
               lastName: true,
               avatar: true
+            }
+          },
+          participants: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  username: true,
+                  firstName: true,
+                  lastName: true,
+                  avatar: true
+                }
+              }
             }
           },
           messages: {
@@ -67,11 +82,11 @@ export class ConversationController {
   async initiateConversation(req: Request, res: Response) {
     try {
       console.log('Initiating conversation with request body:', req.body);
-      const { receiverId } = req.body;
+      const { receiverId, userIds, name } = req.body;
       const senderId = res.locals.requester?.sub;
+      const file = req.file;
 
       console.log('Sender ID:', senderId);
-      console.log('Receiver ID:', receiverId);
 
       if (!senderId) {
         console.error('Unauthorized: No sender ID found in request');
@@ -80,6 +95,39 @@ export class ConversationController {
         });
       }
 
+      // GROUP CHAT
+      if (userIds && Array.isArray(userIds) && userIds.length > 0) {
+        console.log('Creating group conversation...');
+        const conversation = await prisma.conversation.create({
+          data: {
+            id: crypto.randomUUID(),
+            type: 'GROUP',
+            name: name || 'New Group',
+            image: file ? `/uploads/${file.filename}` : null,
+            participants: {
+              create: [{ userId: senderId }, ...userIds.map((id: string) => ({ userId: id }))]
+            }
+          },
+          include: {
+            participants: {
+              include: {
+                user: {
+                  select: {
+                    id: true,
+                    username: true,
+                    firstName: true,
+                    lastName: true,
+                    avatar: true
+                  }
+                }
+              }
+            }
+          }
+        });
+        return res.status(StatusCodes.CREATED).json({ data: conversation });
+      }
+
+      // DIRECT CHAT
       if (!receiverId) {
         console.error('Bad Request: No receiver ID provided');
         return res.status(StatusCodes.BAD_REQUEST).json({
@@ -133,8 +181,12 @@ export class ConversationController {
       const conversation = await prisma.conversation.create({
         data: {
           id: crypto.randomUUID(),
+          type: 'DIRECT',
           sender: { connect: { id: senderId } },
-          receiver: { connect: { id: receiverId } }
+          receiver: { connect: { id: receiverId } },
+          participants: {
+            create: [{ userId: senderId }, { userId: receiverId }]
+          }
         },
         include: {
           sender: {
@@ -185,7 +237,7 @@ export class ConversationController {
       const conversation = await prisma.conversation.findFirst({
         where: {
           id: conversationId,
-          OR: [{ senderId: userId }, { receiverId: userId }]
+          OR: [{ senderId: userId }, { receiverId: userId }, { participants: { some: { userId } } }]
         }
       });
 
@@ -249,7 +301,10 @@ export class ConversationController {
       const conversation = await prisma.conversation.findFirst({
         where: {
           id: conversationId,
-          OR: [{ senderId: userId }, { receiverId: userId }]
+          OR: [{ senderId: userId }, { receiverId: userId }, { participants: { some: { userId } } }]
+        },
+        include: {
+          participants: true
         }
       });
 
@@ -292,11 +347,94 @@ export class ConversationController {
         data: { updatedAt: new Date() }
       });
 
+      // Publish event to Redis
+      const redis = RedisClient.getInstance();
+
+      if (conversation.participants && conversation.participants.length > 0) {
+        const recipients = conversation.participants.filter((p) => p.userId !== userId);
+        for (const recipient of recipients) {
+          await redis.publish(
+            new AppEvent(
+              'NEW_MESSAGE',
+              {
+                receiverId: recipient.userId,
+                message
+              },
+              { senderId: userId }
+            )
+          );
+        }
+      } else {
+        // Fallback for legacy direct messages
+        const receiverId = conversation.senderId === userId ? conversation.receiverId : conversation.senderId;
+        if (receiverId) {
+          await redis.publish(
+            new AppEvent(
+              'NEW_MESSAGE',
+              {
+                receiverId,
+                message
+              },
+              { senderId: userId }
+            )
+          );
+        }
+      }
+
       return res.status(StatusCodes.CREATED).json({
         data: message
       });
     } catch (error) {
       console.error('Error sending message:', error);
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        error: 'Internal server error'
+      });
+    }
+  }
+
+  async deleteConversation(req: Request, res: Response) {
+    try {
+      const userId = res.locals.requester?.sub;
+      const { conversationId } = req.params;
+
+      if (!userId) {
+        return res.status(StatusCodes.UNAUTHORIZED).json({
+          error: 'Unauthorized'
+        });
+      }
+
+      // Verify user has access to this conversation
+      const conversation = await prisma.conversation.findFirst({
+        where: {
+          id: conversationId,
+          OR: [{ senderId: userId }, { receiverId: userId }, { participants: { some: { userId } } }]
+        }
+      });
+
+      if (!conversation) {
+        return res.status(StatusCodes.NOT_FOUND).json({
+          error: 'Conversation not found'
+        });
+      }
+
+      // Delete the conversation and related records
+      await prisma.$transaction([
+        prisma.message.deleteMany({
+          where: { conversationId }
+        }),
+        prisma.conversationParticipant.deleteMany({
+          where: { conversationId }
+        }),
+        prisma.conversation.delete({
+          where: { id: conversationId }
+        })
+      ]);
+
+      return res.status(StatusCodes.OK).json({
+        message: 'Conversation deleted successfully'
+      });
+    } catch (error) {
+      console.error('Error deleting conversation:', error);
       return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
         error: 'Internal server error'
       });

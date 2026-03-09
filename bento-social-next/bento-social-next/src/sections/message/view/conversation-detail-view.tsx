@@ -4,13 +4,19 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-import { getConversationMessages, getConversations } from '@/apis/conversation';
+import {
+  deleteConversation,
+  getConversationMessages,
+  getConversations,
+} from '@/apis/conversation';
 import { Avatar } from '@/components/avatar';
 import { Button } from '@/components/button';
-import { CloseIcon, MoreIcon } from '@/components/icons';
+import { CloseIcon, TrashIcon } from '@/components/icons';
 import { Typography } from '@/components/typography';
+import { useSocket } from '@/context/socket-context';
 import { useUserProfile } from '@/context/user-context';
 import { IConversation, IMessage } from '@/interfaces/conversation';
+import { useRef } from 'react';
 import { ChatInput, MessageItem } from '../components';
 
 //----------------------------------------------------------------------
@@ -27,6 +33,33 @@ export default function ConversationDetailPage({
   const [messages, setMessages] = useState<IMessage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const { socket } = useSocket();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleNewMessage = (message: IMessage) => {
+      if (message.conversationId === id) {
+        setMessages((prev) => [...prev, message]);
+      }
+    };
+
+    socket.on('new_message', handleNewMessage);
+
+    return () => {
+      socket.off('new_message', handleNewMessage);
+    };
+  }, [socket, id]);
 
   useEffect(() => {
     const fetchConversation = async () => {
@@ -65,6 +98,23 @@ export default function ConversationDetailPage({
     router.push('/messages');
   };
 
+  const handleDelete = async () => {
+    if (
+      window.confirm(
+        'Are you sure you want to delete this conversation? This action cannot be undone.'
+      )
+    ) {
+      try {
+        await deleteConversation(id);
+        // Force reload to update sidebar list
+        window.location.href = '/messages';
+      } catch (error) {
+        console.error('Error deleting conversation:', error);
+        alert('Failed to delete conversation');
+      }
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -83,10 +133,24 @@ export default function ConversationDetailPage({
     );
   }
 
-  const otherUser =
-    conversation.senderId === userProfile?.id
-      ? conversation.receiver
-      : conversation.sender;
+  const isGroup = conversation.type === 'GROUP';
+  let title = '';
+  let avatar = '';
+
+  if (isGroup) {
+    title = conversation.name || 'Group Chat';
+    avatar = conversation.image || '/img/default-avatar.jpg';
+  } else {
+    const otherUser =
+      conversation.senderId === userProfile?.id
+        ? conversation.receiver
+        : conversation.sender;
+
+    if (otherUser) {
+      title = `${otherUser.firstName} ${otherUser.lastName}`;
+      avatar = otherUser.avatar || '/img/default-avatar.jpg';
+    }
+  }
 
   return (
     <section className="block md:hidden w-full h-full flex-col bg-surface lg:flex">
@@ -94,17 +158,17 @@ export default function ConversationDetailPage({
         id="conversation-header"
         className="w-full flex items-center gap-4 py-3 pr-6 pl-3"
       >
-        <Avatar
-          src={otherUser.avatar || '/img/default-avatar.jpg'}
-          alt={`${otherUser.firstName} ${otherUser.lastName}`}
-          size={40}
-        />
+        <Avatar src={avatar} alt={title} size={40} />
 
         <Typography level="base2m" className="text-primary grow">
-          {otherUser.firstName} {otherUser.lastName}
+          {title}
         </Typography>
 
-        <Button className="p-2.5" child={<MoreIcon />} />
+        <Button
+          className="p-2.5 text-error hover:bg-error/10"
+          onClick={handleDelete}
+          child={<TrashIcon />}
+        />
 
         <Button
           onClick={handleBack}
@@ -130,6 +194,7 @@ export default function ConversationDetailPage({
             />
           ))
         )}
+        <div ref={messagesEndRef} />
       </section>
 
       <ChatInput

@@ -25,7 +25,7 @@
 							"mode": "formdata",
 							"formdata": [
 								{
-	5								"key": "file",
+									"key": "file",
 									"type": "file",
 									"src": "/Users/viettranx/Desktop/Screenshot 2024-10-29 at 09.56.30.png"
 								},

@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { injectable } from 'tsyringe';
+import { v7 } from 'uuid';
 
 @injectable()
 export class ConversationService {
@@ -53,6 +54,7 @@ export class ConversationService {
     // Create new conversation
     return this.prisma.conversation.create({
       data: {
+        id: v7(),
         senderId,
         receiverId
       },

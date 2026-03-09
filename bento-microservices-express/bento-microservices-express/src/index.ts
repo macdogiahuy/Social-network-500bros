@@ -15,6 +15,7 @@ import { setupUserConsumer, setupUserModule } from '@modules/user/module';
 import { config } from '@shared/components/config';
 import prisma from '@shared/components/prisma';
 import { RedisClient } from '@shared/components/redis-pubsub/redis';
+import { SocketService } from '@shared/components/socket/socket.service';
 import { ServiceContext } from '@shared/interface';
 import { TokenIntrospectRPCClient } from '@shared/rpc/verify-token';
 import { responseErr } from '@shared/utils/error';
@@ -89,6 +90,9 @@ async function bootServer(port: number) {
     setupNotificationConsumer(serviceCtx);
 
     const server = createServer(app);
+
+    // Init socket
+    SocketService.getInstance().init(server);
 
     server.listen(port, config.host, () => {
       Logger.success(`Server is running on ${config.host}:${port}`);

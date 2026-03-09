@@ -70,7 +70,7 @@ export default function InfoUser({ user }: UserInfoProps) {
   const handleMessage = async () => {
     setIsMessageLoading(true);
     try {
-      const response = await initiateConversation(user.id);
+      const response = await initiateConversation({ receiverId: user.id });
       if (response?.data?.id) {
         router.push(`/messages?conversationId=${response.data.id}`);
       } else {

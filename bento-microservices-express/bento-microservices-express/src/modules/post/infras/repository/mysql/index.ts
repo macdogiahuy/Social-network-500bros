@@ -1,8 +1,8 @@
-import { IPostRepository } from "@modules/post/interfaces";
-import { Post, PostCondDTO, Type } from "@modules/post/model";
-import { UpdatePostDTO } from "@modules/post/model/dto";
-import prisma from "@shared/components/prisma";
-import { Paginated, PagingDTO } from "@shared/model";
+import { IPostRepository } from '@modules/post/interfaces';
+import { Post, PostCondDTO, Type } from '@modules/post/model';
+import { UpdatePostDTO } from '@modules/post/model/dto';
+import prisma from '@shared/components/prisma';
+import { Paginated, PagingDTO } from '@shared/model';
 
 export class MysqlPostRepository implements IPostRepository {
   async get(id: string): Promise<Post | null> {
@@ -16,9 +16,9 @@ export class MysqlPostRepository implements IPostRepository {
       isFeatured: result.isFeatured ?? false,
       commentCount: result.commentCount ?? 0,
       likedCount: result.likedCount ?? 0,
-      type: result.type as Type,
+      type: result.type as Type
     } as Post;
-  };
+  }
 
   async list(cond: PostCondDTO, paging: PagingDTO): Promise<Paginated<Post>> {
     const { str, userId, ...rest } = cond;
@@ -37,7 +37,7 @@ export class MysqlPostRepository implements IPostRepository {
     if (str) {
       where = {
         ...where,
-        content: { contains: str },
+        content: { contains: str }
       } as PostCondDTO;
     }
 
@@ -55,21 +55,26 @@ export class MysqlPostRepository implements IPostRepository {
     });
 
     return {
-      data: result.map((item) => ({
-        ...item,
-        image: item.image ?? '',
-        isFeatured: item.isFeatured ?? false,
-        commentCount: item.commentCount ?? 0,
-        likedCount: item.likedCount ?? 0,
-        type: item.type as Type,
-      } as Post)),
+      data: result.map(
+        (item) =>
+          ({
+            ...item,
+            image: item.image ?? '',
+            isFeatured: item.isFeatured ?? false,
+            commentCount: item.commentCount ?? 0,
+            likedCount: item.likedCount ?? 0,
+            type: item.type as Type
+          }) as Post
+      ),
       paging,
       total
     };
-  };
+  }
 
   async insert(data: Post): Promise<boolean> {
-    await prisma.posts.create({ data });
+    // Extract only the fields that exist in the database schema
+    const { author, topic, hasLiked, hasSaved, ...postData } = data;
+    await prisma.posts.create({ data: postData });
 
     return true;
   }
@@ -88,14 +93,17 @@ export class MysqlPostRepository implements IPostRepository {
   async listByIds(ids: string[]): Promise<Post[]> {
     const result = await prisma.posts.findMany({ where: { id: { in: ids } } });
 
-    return result.map((item) => ({
-      ...item,
-      image: item.image ?? '',
-      isFeatured: item.isFeatured ?? false,
-      commentCount: item.commentCount ?? 0,
-      likedCount: item.likedCount ?? 0,
-      type: item.type as Type,
-    } as Post));
+    return result.map(
+      (item) =>
+        ({
+          ...item,
+          image: item.image ?? '',
+          isFeatured: item.isFeatured ?? false,
+          commentCount: item.commentCount ?? 0,
+          likedCount: item.likedCount ?? 0,
+          type: item.type as Type
+        }) as Post
+    );
   }
 
   async increaseCount(id: string, field: string, step: number): Promise<boolean> {

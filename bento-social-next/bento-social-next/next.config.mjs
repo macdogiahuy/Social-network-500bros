@@ -4,7 +4,7 @@ const nextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
   experimental: {
-    optimizeCss: true,
+    optimizeCss: false,
   },
   images: {
     domains: [
@@ -24,11 +24,6 @@ const nextConfig = {
         pathname: '/uploads/**',
       },
     ],
-    minimumCacheTTL: 60,
-    formats: ['image/webp'],
-    dangerouslyAllowSVG: true,
-    contentDispositionType: 'attachment',
-    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
   output: 'standalone',
 };

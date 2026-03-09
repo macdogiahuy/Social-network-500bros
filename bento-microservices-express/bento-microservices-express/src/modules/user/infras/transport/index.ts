@@ -3,7 +3,7 @@ import { User, UserCondDTO, UserRegistrationDTO, UserUpdateDTO } from '@modules/
 import { jwtProvider } from '@shared/components/jwt';
 import { Requester } from '@shared/interface';
 import { BaseHttpService } from '@shared/transport/base-http-service';
-import { ErrNotFound, ErrUnauthorized } from '@shared/utils/error';
+import { AppError, ErrNotFound } from '@shared/utils/error';
 import { successResponse } from '@shared/utils/utils';
 import { NextFunction, Request, Response } from 'express';
 
@@ -24,13 +24,13 @@ export class UserHTTPService extends BaseHttpService<User, UserRegistrationDTO, 
   async profileAPI(req: Request, res: Response) {
     const token = req.headers.authorization?.split(' ')[1];
     if (!token) {
-      throw ErrUnauthorized.withMessage('Access token is missing');
+      throw AppError.from(new Error('Access token is missing'), 401);
     }
 
     const payload = await jwtProvider.verifyToken(token);
 
     if (!payload) {
-      throw ErrUnauthorized.withMessage('Invalid access token');
+      throw AppError.from(new Error('Invalid access token'), 401);
     }
 
     const { sub } = payload;
@@ -44,13 +44,13 @@ export class UserHTTPService extends BaseHttpService<User, UserRegistrationDTO, 
   async updateProfileAPI(req: Request, res: Response) {
     const token = req.headers.authorization?.split(' ')[1];
     if (!token) {
-      throw ErrUnauthorized.withMessage('Access token is missing');
+      throw AppError.from(new Error('Access token is missing'), 401);
     }
 
     const payload = await jwtProvider.verifyToken(token);
 
     if (!payload) {
-      throw ErrUnauthorized.withMessage('Invalid access token');
+      throw AppError.from(new Error('Invalid access token'), 401);
     }
 
     const requester = payload as Requester;

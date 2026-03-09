@@ -22,6 +22,19 @@ export const getPosts = async (params?: {
   return response.data;
 };
 
+export const getTrendingPosts = async (params?: {
+  limit?: number;
+  page?: number;
+}): Promise<IApiResponse<IPost[]>> => {
+  const response = await axiosInstance.get<IApiResponse<IPost[]>>(
+    '/v1/feed/trending',
+    {
+      params,
+    }
+  );
+  return response.data;
+};
+
 export const getPostDetail = async (
   id: string
 ): Promise<IApiResponse<IPost>> => {

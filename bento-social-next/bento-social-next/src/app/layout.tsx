@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import React from 'react';
 
+import { HOST_API } from '@/global-config';
 import AppProviders from '@/providers/app-provider';
 
 import './globals.css';
@@ -17,6 +18,22 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Temporary debug to show API URL on mobile
+  console.log('DEBUG INFO:');
+  console.log(
+    '- Hostname:',
+    typeof window !== 'undefined' ? window.location.hostname : 'server'
+  );
+  console.log(
+    '- Is Localhost?',
+    typeof window !== 'undefined'
+      ? window.location.hostname === 'localhost'
+      : 'server'
+  );
+  console.log('- Env NETWORK_API:', process.env.NEXT_PUBLIC_NETWORK_API_DOMAIN);
+  console.log('- Env LOCAL_API:', process.env.NEXT_PUBLIC_API_DOMAIN);
+  console.log('- Final HOST_API:', HOST_API);
+
   return (
     <html lang="en">
       <head>

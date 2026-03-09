@@ -1,7 +1,7 @@
 import { usePathname } from 'next/navigation';
 import React from 'react';
 
-import { getPosts } from '@/apis/post';
+import { getPosts, getTrendingPosts } from '@/apis/post';
 import { followUser, getUserFollower } from '@/apis/user';
 import { useUserProfile } from '@/context/user-context';
 
@@ -25,12 +25,14 @@ export default function SidebarRight({ className }: SidebarRightProps) {
   const [activeTab, setActiveTab] = React.useState('1');
   const pathName = usePathname();
   const [posts, setPosts] = React.useState<IPost[]>([]);
+  const [trendingPosts, setTrendingPosts] = React.useState<IPost[]>([]);
   const [followers, setFollowers] = React.useState<IFollower[]>([]);
   const [isLoading, setIsLoading] = React.useState({
     posts: true,
     followers: true,
+    trending: false,
   });
-  const [error, setError] = React.useState({ posts: '', followers: '' });
+  const [error, setError] = React.useState({ posts: '', followers: '', trending: '' });
   const { userProfile } = useUserProfile();
 
   React.useEffect(() => {
@@ -72,6 +74,28 @@ export default function SidebarRight({ className }: SidebarRightProps) {
 
     fetchFollowersData();
   }, [activeTab, userProfile?.id]);
+
+  React.useEffect(() => {
+    const fetchTrendingData = async () => {
+      if (activeTab !== '2') return;
+
+      setIsLoading((prev) => ({ ...prev, trending: true }));
+      try {
+        const response = await getTrendingPosts({ limit: 10, page: 1 });
+        setTrendingPosts(response.data);
+      } catch (error) {
+        console.error('Error fetching trending posts:', error);
+        setError((prev) => ({
+          ...prev,
+          trending: 'Failed to load trending posts.',
+        }));
+      } finally {
+        setIsLoading((prev) => ({ ...prev, trending: false }));
+      }
+    };
+
+    fetchTrendingData();
+  }, [activeTab]);
 
   const handleFollow = async (id: string) => {
     try {
@@ -161,18 +185,24 @@ export default function SidebarRight({ className }: SidebarRightProps) {
               </div>
             ) : (
               <ul className="max-h-[calc(100svh-68px)] overflow-y-scroll no-scrollbar">
-                {posts.map((post) => (
-                  <li key={post.id} className="mb-2">
-                    <TrendingPostCard
-                      topic={post.topic}
-                      alt={post.id}
-                      author={post.author}
-                      image={post.image}
-                      content={post.content}
-                      time={post.createdAt}
-                    />
-                  </li>
-                ))}
+                {isLoading.trending ? (
+                  <SplashScreen />
+                ) : error.trending ? (
+                  <div>{error.trending}</div>
+                ) : (
+                  trendingPosts.map((post) => (
+                    <li key={post.id} className="mb-2">
+                      <TrendingPostCard
+                        topic={post.topic}
+                        alt={post.id}
+                        author={post.author}
+                        image={post.image}
+                        content={post.content}
+                        time={post.createdAt}
+                      />
+                    </li>
+                  ))
+                )}
               </ul>
             )}
           </>

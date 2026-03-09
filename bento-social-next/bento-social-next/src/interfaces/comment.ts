@@ -20,3 +20,5 @@ export interface IChildComment {
   likedCount: number;
   hasLiked: boolean;
 }
+
+export type IChilrenComment = IChildComment;

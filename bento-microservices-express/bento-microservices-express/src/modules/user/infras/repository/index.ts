@@ -1,5 +1,5 @@
 import { IUserCommandRepository } from "@modules/user/interface";
-import { User, UserCondDTO, UserUpdateDTO } from "@modules/user/model";
+import { Status, User, UserCondDTO, UserUpdateDTO } from "@modules/user/model";
 import prisma from "@shared/components/prisma";
 import { ICommandRepository, IQueryRepository, IRepository, UserRole } from "@shared/interface";
 import { Paginated, PagingDTO } from "@shared/model";
@@ -87,7 +87,7 @@ export class PrismaUserQueryRepository implements IQueryRepository<User, UserCon
   }
   
   async list(cond: UserCondDTO, paging: PagingDTO): Promise<Paginated<User>> {
-    const condition = { ...cond, not: { status: 'deleted' } };
+    const condition = { ...cond, NOT: { status: Status.DELETED } };
     const total = await prisma.users.count({ where: condition });
 
     const skip = (paging.page - 1) * paging.limit;

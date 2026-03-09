@@ -22,7 +22,13 @@ const ALLOWED_FILE_TYPES: Record<string, string> = {
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': '.xlsx',
   'text/plain': '.txt',
   'application/zip': '.zip',
-  'application/x-rar-compressed': '.rar'
+  'application/x-rar-compressed': '.rar',
+  'audio/mpeg': '.mp3',
+  'audio/wav': '.wav',
+  'audio/ogg': '.ogg',
+  'video/mp4': '.mp4',
+  'video/webm': '.webm',
+  'video/ogg': '.ogg'
 } as const;
 
 const storage = multer.diskStorage({
@@ -46,13 +52,17 @@ const fileFilter = (req: Express.Request, file: Express.Multer.File, cb: multer.
 };
 
 const SIZE_LIMITS = {
-  image: 5 * 1024 * 1024, // 5MB for images
-  document: 10 * 1024 * 1024, // 10MB for documents
-  archive: 50 * 1024 * 1024 // 50MB for archives
+  image: 10 * 1024 * 1024, // 10MB for images
+  audio: 20 * 1024 * 1024, // 20MB for audio
+  video: 100 * 1024 * 1024, // 100MB for video
+  document: 20 * 1024 * 1024, // 20MB for documents
+  archive: 100 * 1024 * 1024 // 100MB for archives
 } as const;
 
 function getFileSizeLimit(mimetype: string): number {
   if (mimetype.startsWith('image/')) return SIZE_LIMITS.image;
+  if (mimetype.startsWith('audio/')) return SIZE_LIMITS.audio;
+  if (mimetype.startsWith('video/')) return SIZE_LIMITS.video;
   if (mimetype.includes('zip') || mimetype.includes('rar')) return SIZE_LIMITS.archive;
   return SIZE_LIMITS.document;
 }

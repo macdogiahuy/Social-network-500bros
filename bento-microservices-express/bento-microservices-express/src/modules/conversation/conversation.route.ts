@@ -44,4 +44,12 @@ router.post('/:conversationId/messages', upload.single('file'), async (req: Requ
   }
 });
 
+router.delete('/:conversationId', async (req: Request, res: Response, next: Function) => {
+  try {
+    await conversationController.deleteConversation(req, res);
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;
