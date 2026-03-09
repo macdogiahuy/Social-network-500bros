@@ -67,6 +67,20 @@ export const sendMessage = async (
   return response.data;
 };
 
+export const reactToMessage = async (
+  conversationId: string,
+  messageId: string,
+  emoji: string
+) => {
+  const response = await axiosInstance.post(
+    `${VERSION_PREFIX}/conversations/${conversationId}/messages/${messageId}/reactions`,
+    {
+      emoji,
+    }
+  );
+  return response.data;
+};
+
 export const getConversations = async (): Promise<{
   data: IConversation[];
 }> => {

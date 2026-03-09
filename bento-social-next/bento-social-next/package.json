@@ -25,6 +25,7 @@
     "react-dom": "^18",
     "react-hook-form": "^7.53.1",
     "react-query": "^3.39.3",
+    "simple-peer": "^9.11.1",
     "socket.io-client": "^4.8.1",
     "tailwind-variants": "^0.2.1",
     "tsyringe": "^4.10.0",

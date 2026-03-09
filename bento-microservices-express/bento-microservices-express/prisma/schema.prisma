@@ -218,6 +218,7 @@ model Users {
   sentConversations    Conversation[] @relation("SentConversations")
   receivedConversations Conversation[] @relation("ReceivedConversations")
   conversationParticipations ConversationParticipant[]
+  messageReactions     MessageReaction[]
 
   @@map("users")
 }
@@ -268,10 +269,27 @@ model Message {
   updatedAt      DateTime     @default(now()) @map("updated_at") @db.Timestamp(0)
   conversation   Conversation @relation(fields: [conversationId], references: [id])
   sender         Users        @relation("SentMessages", fields: [senderId], references: [id])
+  reactions      MessageReaction[]
 
   @@index([conversationId], map: "conversation_id")
   @@index([senderId], map: "sender_id")
   @@map("messages")
+}
+
+model MessageReaction {
+  id        String   @id @map("id") @db.VarChar(36)
+  messageId String   @map("message_id") @db.VarChar(36)
+  userId    String   @map("user_id") @db.VarChar(36)
+  emoji     String   @map("emoji") @db.VarChar(10)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(0)
+  
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user      Users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId])
+  @@index([messageId])
+  @@index([userId])
+  @@map("message_reactions")
 }
 
 enum notifications_action {

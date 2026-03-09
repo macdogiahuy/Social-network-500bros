@@ -49,8 +49,8 @@ export class SocketService {
     }
 
     try {
-      // Decode token to get user ID. 
-      // Note: In a real microservice, we might verify with the auth service, 
+      // Decode token to get user ID.
+      // Note: In a real microservice, we might verify with the auth service,
       // but for now we assume the token is valid if it can be decoded and contains 'sub'.
       // Or verify using the same secret if available.
       // Assuming standard JWT structure where 'sub' is userId.
@@ -75,12 +75,37 @@ export class SocketService {
         this.userSockets.delete(userId);
         Logger.info(`User disconnected: ${userId}`);
       });
+
+      // Video Call Events
+      socket.on('call_user', (data: { userToCall: string; signalData: any; from: string; name: string }) => {
+        const { userToCall, signalData, from, name } = data;
+        if (this.userSockets.has(userToCall)) {
+          this.io.to(this.userSockets.get(userToCall)!).emit('call_user', {
+            signal: signalData,
+            from,
+            name
+          });
+        }
+      });
+
+      socket.on('answer_call', (data: { to: string; signal: any }) => {
+        const { to, signal } = data;
+        if (this.userSockets.has(to)) {
+          this.io.to(this.userSockets.get(to)!).emit('call_accepted', signal);
+        }
+      });
+
+      socket.on('end_call', (data: { to: string }) => {
+        if (this.userSockets.has(data.to)) {
+          this.io.to(this.userSockets.get(data.to)!).emit('call_ended');
+        }
+      });
     }
   }
 
   private async subscribeToRedisEvents() {
     const redis = RedisClient.getInstance();
-    
+
     // Subscribe to NEW_MESSAGE event
     await redis.subscribe('NEW_MESSAGE', (message: string) => {
       try {
@@ -90,19 +115,36 @@ export class SocketService {
         Logger.error(`Error parsing Redis message: ${error}`);
       }
     });
+
+    // Subscribe to MESSAGE_REACTION event
+    await redis.subscribe('MESSAGE_REACTION', (message: string) => {
+      try {
+        const parsedMessage = JSON.parse(message);
+        this.handleMessageReaction(parsedMessage.payload);
+      } catch (error) {
+        Logger.error(`Error parsing Redis message: ${error}`);
+      }
+    });
+
+    // Subscribe to other events here...
   }
 
   private handleNewMessage(payload: any) {
-    // Payload structure depends on what we publish. 
+    // Payload structure depends on what we publish.
     // Assuming { receiverId: string, message: any }
     const { receiverId, message } = payload;
-    
+
     if (receiverId && message) {
-      const socketId = this.userSockets.get(receiverId);
-      if (socketId) {
-        this.io.to(socketId).emit('new_message', message);
-        Logger.info(`Message sent to user ${receiverId}`);
+      if (this.userSockets.has(receiverId)) {
+        this.io.to(this.userSockets.get(receiverId)!).emit('new_message', message);
       }
+    }
+  }
+
+  private handleMessageReaction(payload: any) {
+    const { receiverId, ...data } = payload;
+    if (receiverId && this.userSockets.has(receiverId)) {
+      this.io.to(this.userSockets.get(receiverId)!).emit('message_reaction', data);
     }
   }
 

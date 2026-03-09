@@ -12,6 +12,12 @@ export interface IMessage {
   fileType?: string;
   createdAt: string;
   updatedAt: string;
+  reactions?: {
+    id: string;
+    userId: string;
+    emoji: string;
+    user?: IUserSimple;
+  }[];
 }
 
 export interface IConversation {

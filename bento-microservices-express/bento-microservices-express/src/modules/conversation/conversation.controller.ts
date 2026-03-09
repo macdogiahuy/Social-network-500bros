@@ -260,6 +260,18 @@ export class ConversationController {
               lastName: true,
               avatar: true
             }
+          },
+          reactions: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  avatar: true
+                }
+              }
+            }
           }
         },
         orderBy: {
@@ -358,7 +370,10 @@ export class ConversationController {
               'NEW_MESSAGE',
               {
                 receiverId: recipient.userId,
-                message
+                message: {
+                  ...message,
+                  reactions: []
+                }
               },
               { senderId: userId }
             )
@@ -373,7 +388,10 @@ export class ConversationController {
               'NEW_MESSAGE',
               {
                 receiverId,
-                message
+                message: {
+                  ...message,
+                  reactions: []
+                }
               },
               { senderId: userId }
             )
@@ -438,6 +456,122 @@ export class ConversationController {
       return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
         error: 'Internal server error'
       });
+    }
+  }
+
+  async reactToMessage(req: Request, res: Response) {
+    try {
+      const userId = res.locals.requester?.sub;
+      const { conversationId, messageId } = req.params;
+      const { emoji } = req.body;
+
+      if (!userId) {
+        return res.status(StatusCodes.UNAUTHORIZED).json({
+          error: 'Unauthorized'
+        });
+      }
+
+      if (!emoji) {
+        return res.status(StatusCodes.BAD_REQUEST).json({
+          error: 'Emoji is required'
+        });
+      }
+
+      // Check if conversation exists and user is participant
+      const conversation = await prisma.conversation.findFirst({
+        where: {
+          id: conversationId,
+          OR: [{ senderId: userId }, { receiverId: userId }, { participants: { some: { userId } } }]
+        },
+        include: { participants: true }
+      });
+
+      if (!conversation) {
+        // Fallback check separated to ensure participant access
+        return res.status(StatusCodes.NOT_FOUND).json({ error: 'Conversation not found or access denied' });
+      }
+
+      // Check if message exists in conversation
+      const message = await prisma.message.findFirst({
+        where: { id: messageId, conversationId }
+      });
+
+      if (!message) {
+        return res.status(StatusCodes.NOT_FOUND).json({ error: 'Message not found' });
+      }
+
+      // Check for existing reaction
+      const existingReaction = await prisma.messageReaction.findFirst({
+        where: {
+          messageId,
+          userId
+        }
+      });
+
+      const redis = RedisClient.getInstance();
+      let result;
+      let action = 'add';
+
+      if (existingReaction) {
+        if (existingReaction.emoji === emoji) {
+          // Toggle off (remove)
+          await prisma.messageReaction.delete({
+            where: { id: existingReaction.id }
+          });
+          action = 'remove';
+          result = { message: 'Reaction removed' };
+        } else {
+          // Update
+          const updated = await prisma.messageReaction.update({
+            where: { id: existingReaction.id },
+            data: { emoji }
+          });
+          action = 'update';
+          result = { data: updated };
+        }
+      } else {
+        // Create
+        const newReaction = await prisma.messageReaction.create({
+          data: {
+            id: crypto.randomUUID(),
+            messageId,
+            userId,
+            emoji
+          }
+        });
+        result = { data: newReaction };
+      }
+
+      // Publish event
+      const eventPayload = {
+        conversationId,
+        messageId,
+        userId,
+        emoji: action === 'remove' ? existingReaction?.emoji : emoji,
+        action // 'add', 'remove', 'update'
+      };
+
+      if (conversation.participants && conversation.participants.length > 0) {
+        const recipients = conversation.participants.filter((p) => p.userId !== userId);
+        for (const recipient of recipients) {
+          await redis.publish(
+            new AppEvent('MESSAGE_REACTION', { ...eventPayload, receiverId: recipient.userId }, { senderId: userId })
+          );
+        }
+      } else {
+        const receiverId = conversation.senderId === userId ? conversation.receiverId : conversation.senderId;
+        if (receiverId) {
+          await redis.publish(new AppEvent('MESSAGE_REACTION', { ...eventPayload, receiverId }, { senderId: userId }));
+        }
+      }
+
+      // Also publish back to sender for optimistic UI confirmation if needed, but usually frontend handles it.
+      // However, for consistency in multi-device, good to publish to sender too? usually loopback is handled by FE or skipped.
+
+      return res.status(StatusCodes.OK).json(result);
+    } catch (error) {
+      console.error('Error reacting to message:', error);
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: 'Internal server error' });
     }
   }
 }

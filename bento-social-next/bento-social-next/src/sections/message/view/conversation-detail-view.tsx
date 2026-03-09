@@ -12,12 +12,14 @@ import {
 import { Avatar } from '@/components/avatar';
 import { Button } from '@/components/button';
 import { CloseIcon, TrashIcon } from '@/components/icons';
+import CameraIcon from '@/components/icons/camera';
 import { Typography } from '@/components/typography';
 import { useSocket } from '@/context/socket-context';
 import { useUserProfile } from '@/context/user-context';
 import { IConversation, IMessage } from '@/interfaces/conversation';
 import { useRef } from 'react';
 import { ChatInput, MessageItem } from '../components';
+import VideoCallModal from '../components/video-call-modal';
 
 //----------------------------------------------------------------------
 interface ConversationDetailPageProps {
@@ -37,6 +39,31 @@ export default function ConversationDetailPage({
   const { socket } = useSocket();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  const [isCallModalOpen, setIsCallModalOpen] = useState(false);
+  const [incomingCall, setIncomingCall] = useState<any>(null);
+  const [isInitiator, setIsInitiator] = useState(false);
+  const [callerName, setCallerName] = useState('');
+
+  const startVideoCall = () => {
+    setIsInitiator(true);
+    setIsCallModalOpen(true);
+    setCallerName('');
+  };
+
+  useEffect(() => {
+    if (!socket) return;
+    socket.on('call_user', (data: any) => {
+      console.log('Incoming call:', data);
+      setIncomingCall(data);
+      setCallerName(data.name || 'Unknown User');
+      setIsInitiator(false);
+      setIsCallModalOpen(true);
+    });
+    return () => {
+      socket.off('call_user');
+    };
+  }, [socket]);
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -54,10 +81,50 @@ export default function ConversationDetailPage({
       }
     };
 
+    const handleMessageReaction = (data: any) => {
+      if (data.conversationId !== id) return;
+
+      setMessages((prevMessages) => {
+        return prevMessages.map((msg) => {
+          if (msg.id === data.messageId) {
+            let reactions = msg.reactions ? [...msg.reactions] : [];
+            const existingIndex = reactions.findIndex(
+              (r) => r.userId === data.userId
+            );
+
+            if (data.action === 'add') {
+              if (existingIndex === -1) {
+                reactions.push({
+                  id: 'temp-' + Date.now(),
+                  userId: data.userId,
+                  emoji: data.emoji,
+                });
+              }
+            } else if (data.action === 'remove') {
+              if (existingIndex !== -1) {
+                reactions.splice(existingIndex, 1);
+              }
+            } else if (data.action === 'update') {
+              if (existingIndex !== -1) {
+                reactions[existingIndex] = {
+                  ...reactions[existingIndex],
+                  emoji: data.emoji,
+                };
+              }
+            }
+            return { ...msg, reactions };
+          }
+          return msg;
+        });
+      });
+    };
+
     socket.on('new_message', handleNewMessage);
+    socket.on('message_reaction', handleMessageReaction);
 
     return () => {
       socket.off('new_message', handleNewMessage);
+      socket.off('message_reaction', handleMessageReaction);
     };
   }, [socket, id]);
 
@@ -164,6 +231,14 @@ export default function ConversationDetailPage({
           {title}
         </Typography>
 
+        {!isGroup && (
+          <Button
+            onClick={startVideoCall}
+            className="p-2.5 text-primary hover:bg-primary/10"
+            child={<CameraIcon />}
+          />
+        )}
+
         <Button
           className="p-2.5 text-error hover:bg-error/10"
           onClick={handleDelete}
@@ -205,6 +280,22 @@ export default function ConversationDetailPage({
           });
         }}
       />
+
+      {isCallModalOpen && (
+        <VideoCallModal
+          isOpen={isCallModalOpen}
+          onClose={() => setIsCallModalOpen(false)}
+          socket={socket}
+          receiverId={
+            conversation.senderId === userProfile?.id
+              ? conversation.receiverId!
+              : conversation.senderId
+          }
+          isInitiator={isInitiator}
+          incomingSignal={incomingCall}
+          callerName={callerName}
+        />
+      )}
     </section>
   );
 }
