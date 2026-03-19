@@ -8,7 +8,7 @@ for /f "tokens=2 delims=:" %%a in ('ipconfig ^| findstr /R /C:"IPv4.*" ^| findst
 set "LOCAL_IP=%LOCAL_IP:~1%"
 echo Detected local IP: %LOCAL_IP%
 
-cd bento-microservices-express\bento-microservices-express
+cd bento-microservices-express
 
 echo Stopping any existing Docker services...
 docker-compose down
@@ -31,9 +31,9 @@ REM --- Write .env for backend ---
     REM Add other backend env variables as needed
 ) > .env
 
-start cmd /k "npm run dev"
+start cmd /k "yarn dev"
 
-cd ..\..\bento-social-next\bento-social-next
+cd ..\bento-social-next
 
 REM --- Write .env for frontend ---
 (
@@ -42,7 +42,7 @@ REM --- Write .env for frontend ---
     REM Add other frontend env variables as needed
 ) > .env
 
-start cmd /k "npm run dev"
+start cmd /k "yarn dev"
 
 echo Services started in network mode!
 echo Frontend: http://%LOCAL_IP%:3001

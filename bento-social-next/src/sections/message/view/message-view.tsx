@@ -1,81 +1,43 @@
-import { getConversations } from '@/apis/conversation';
+'use client';
+import React from 'react';
+
 import useBreakPoint from '@/hooks/use-breakpoint';
-import { IConversation } from '@/interfaces/conversation';
-import { useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
 
 import EmptyContent from '@/components/empty-content/empty-content';
 import { Typography } from '@/components/typography';
 import { ConversationSidebar } from '../components';
-import ConversationDetail from '../components/conversation-detail';
 
-export default function MessageView() {
+import ConversationDetailPage from './conversation-detail-view';
+
+//-----------------------------------------------------------------------------------------------
+
+export default function Message() {
   const { breakpoint } = useBreakPoint();
-  const searchParams = useSearchParams();
-  const [showDetailOnly, setShowDetailOnly] = useState(false);
-  const [selectedConversation, setSelectedConversation] =
-    useState<IConversation | null>(null);
-  const [conversations, setConversations] = useState<IConversation[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [showDetailOnly, setShowDetailOnly] = React.useState(false);
+  const [selectedConversationId, setSelectedConversationId] = React.useState<
+    string | null
+  >(null);
 
   const isMobile = breakpoint === 'sm';
   const hideConsolidation = breakpoint === 'sm' || breakpoint === 'md';
 
-  useEffect(() => {
-    const conversationId = searchParams.get('conversationId');
-    if (conversationId) {
-      const fetchConversations = async () => {
-        try {
-          setIsLoading(true);
-          const response = await getConversations();
-          setConversations(response.data);
-          const conversation = response.data.find(
-            (c) => c.id === conversationId,
-          );
-          if (conversation) {
-            setSelectedConversation(conversation);
-            if (isMobile) {
-              setShowDetailOnly(true);
-            }
-          }
-        } catch (error) {
-          console.error('Error fetching conversations:', error);
-        } finally {
-          setIsLoading(false);
-        }
-      };
-      fetchConversations();
-    }
-  }, [searchParams, isMobile]);
-
-  const handleConversationClick = (conversation: IConversation) => {
-    setSelectedConversation(conversation);
+  const handleConversationClick = (id: string) => {
     if (isMobile) {
       setShowDetailOnly(true);
     }
-  };
-
-  const handleBack = () => {
-    setShowDetailOnly(false);
-    setSelectedConversation(null);
+    setSelectedConversationId(id);
   };
 
   return (
     <section className="w-full h-full flex flex-col justify-start transition-all duration-[0.5s] lg:flex-row lg:items-start">
       {!isMobile || !showDetailOnly ? (
-        <ConversationSidebar
-          onConversationClick={handleConversationClick}
-          selectedConversationId={selectedConversation?.id}
-        />
+        <ConversationSidebar onConversationClick={handleConversationClick} />
       ) : null}
 
       {!hideConsolidation ? (
         <section className="bg-surface h-screen w-full grow flex flex-col justify-center items-center gap-3 py-[1.75rem]">
-          {selectedConversation ? (
-            <ConversationDetail
-              conversation={selectedConversation}
-              onBack={handleBack}
-            />
+          {selectedConversationId ? (
+            <ConversationDetailPage id={selectedConversationId} />
           ) : (
             <EmptyContent
               content={
@@ -87,11 +49,8 @@ export default function MessageView() {
             />
           )}
         </section>
-      ) : selectedConversation ? (
-        <ConversationDetail
-          conversation={selectedConversation}
-          onBack={handleBack}
-        />
+      ) : selectedConversationId ? (
+        <ConversationDetailPage id={selectedConversationId} />
       ) : null}
     </section>
   );

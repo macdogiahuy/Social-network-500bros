@@ -2,7 +2,7 @@
 echo Database Import Script
 echo -------------------
 
-cd ..\bento-microservices-express\bento-microservices-express
+cd ..\bento-microservices-express
 
 if not exist ..\sync-db\dumps (
     echo Error: dumps directory not found

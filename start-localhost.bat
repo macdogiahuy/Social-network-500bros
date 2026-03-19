@@ -1,7 +1,7 @@
 @echo off
 echo Starting Docker services...
 
-cd bento-microservices-express\bento-microservices-express
+cd bento-microservices-express
 
 echo Stopping any existing Docker services...
 docker-compose down
@@ -19,10 +19,12 @@ if errorlevel 1 (
 )
 
 echo Starting services in localhost mode...
-start cmd /k "copy .env .env.temp 2>nul && copy .env.development .env && npm run dev"
+if not exist .env copy .env.example .env >nul
+start cmd /k "yarn dev"
 
-cd ..\..\bento-social-next\bento-social-next
-start cmd /k "copy .env .env.temp 2>nul && npm run dev"
+cd ..\bento-social-next
+if not exist .env copy .env.example .env >nul
+start cmd /k "yarn dev"
 
 echo Services started in localhost mode!
 echo Frontend: http://localhost:3001

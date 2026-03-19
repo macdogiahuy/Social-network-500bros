@@ -6,6 +6,12 @@
 # Dependencies
 node_modules/
 .pnpm-store/
+.yarn/cache
+.yarn/unplugged
+
+# Lock files (Yarn is canonical - exclude others)
+package-lock.json
+pnpm-lock.yaml
 
 # Build output
 dist/
@@ -31,6 +37,8 @@ social_mysql/
 # OS files
 .DS_Store
 Thumbs.db
+__MACOSX/
+**/__MACOSX/
 
 # Temporary files
 *.temp

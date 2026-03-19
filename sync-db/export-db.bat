@@ -2,7 +2,7 @@
 echo Database Export Script
 echo -------------------
 
-cd ..\bento-microservices-express\bento-microservices-express
+cd ..\bento-microservices-express
 
 rem Create dumps directory if it doesn't exist
 mkdir ..\sync-db\dumps 2>nul
