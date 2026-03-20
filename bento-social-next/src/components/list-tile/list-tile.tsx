@@ -10,7 +10,7 @@ type ListTileProps = {
 const ListTile = ({ children, className, onClick, active }: ListTileProps) => {
   return (
     <li
-      className={`relative z-0 ${active ? 'bg-neutral2-10' : 'bg-neutral2-2'} rounded-[20px] before:content-[''] before:absolute before:inset-0 before:z-1 before:opacity-15 before:bg-linear-card before:rounded-[20px] after:content-[''] after:absolute after:inset-[1px] after:z-1 after:bg-[#313131] after:rounded-[19px]`}
+      className={`relative z-0 ${active ? 'bg-neutral2-10' : 'bg-neutral2-2'} rounded-[20px] before:content-[''] before:absolute before:inset-0 before:z-1 before:opacity-15 before:bg-linear-card before:rounded-[20px] after:content-[''] after:absolute after:inset-[1px] after:z-1 after:bg-surface after:rounded-[19px]`}
     >
       <div
         onClick={onClick}

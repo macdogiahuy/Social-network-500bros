@@ -1,6 +1,6 @@
-import { HTMLAttributes } from "react";
+import { InputHTMLAttributes } from "react";
 
-type Props = HTMLAttributes<HTMLInputElement> &{};
+type Props = InputHTMLAttributes<HTMLInputElement> &{};
 function Toggle({...props}: Props) {
   return (
     <label className="switch inline-flex items-center cursor-pointer">

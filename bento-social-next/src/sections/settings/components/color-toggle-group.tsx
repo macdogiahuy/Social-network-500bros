@@ -1,6 +1,7 @@
 import React from 'react';
 
 import style from '@/styles/preferences-setting.module.css';
+import { useSettings } from '@/context/theme-context';
 
 //-----------------------------------------------------------------------------------------------
 
@@ -9,25 +10,22 @@ interface ColorOptions {
   value: string;
 }
 interface ColorToggleProps {
-  selectedColor?: string;
   colorOptions: ColorOptions[];
 }
 
 export default function ColorToggleGroup({
-  colorOptions,
-  selectedColor,
+  colorOptions
 }: ColorToggleProps) {
-  const [selectedOption, setSelectedOption] = React.useState<
-    string | undefined
-  >(selectedColor);
+  const { accentColor, setAccentColor } = useSettings();
+
   return (
     <div className="flex gap-3">
       {colorOptions.map((colorOption) => (
         <ColorToggleItem
           key={colorOption.key}
           colorValue={colorOption.value}
-          onClick={() => setSelectedOption(colorOption.key)}
-          isActive={selectedOption === colorOption.key}
+          onClick={() => setAccentColor(colorOption.key)}
+          isActive={accentColor === colorOption.key}
         />
       ))}
     </div>

@@ -2,9 +2,41 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
+:root,
+.dark {
+  --primary-rgb: 248, 248, 248;
+  --surface-rgb: 40, 40, 40;
+  --surface-stack-rgb: 18, 18, 18;
+  --neutral-1: 255, 255, 255;
+  --neutral-2: 248, 248, 248;
+  --neutral-3: 40, 40, 40;
+  --neutral-4: 18, 18, 18;
+  --cushion: #444;
+  --avt: #2e2e2e;
+  --auth: #202020;
+  --background: #171717;
+  --foreground: #ffffff;
+  --btn-bg: rgba(40, 40, 40, 0.7);
+  --btn-border: rgba(255, 255, 255, 0.15);
+  --btn-hover: rgba(60, 60, 60, 0.9);
+}
+
+.light {
+  --primary-rgb: 20, 20, 20;
+  --surface-rgb: 235, 235, 235;
+  --surface-stack-rgb: 220, 220, 220;
+  --neutral-1: 18, 18, 18;
+  --neutral-2: 60, 60, 60;
+  --neutral-3: 220, 220, 220;
+  --neutral-4: 255, 255, 255;
+  --cushion: #eef0f2;
+  --avt: #e0e0e0;
+  --auth: #f8f8f8;
   --background: #ffffff;
   --foreground: #171717;
+  --btn-bg: #ffffff;
+  --btn-border: rgba(0, 0, 0, 0.15);
+  --btn-hover: #f0f0f0;
 }
 
 .font-inter {

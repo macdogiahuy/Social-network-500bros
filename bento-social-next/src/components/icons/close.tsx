@@ -10,7 +10,7 @@ export default function CloseIcon() {
       <g opacity="0.8">
         <path
           d="M4.75 4.75L19.25 19.25M19.25 4.75L4.75 19.25"
-          stroke="#F8F8F8"
+          stroke="currentColor"
           strokeOpacity="0.7"
           strokeWidth="1.5"
           strokeLinecap="round"

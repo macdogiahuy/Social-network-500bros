@@ -20,7 +20,7 @@ const NotificationBanner = () => {
       <span className="absolute top-2 right-2">
         <button
           onClick={handleClose}
-          className="relative z-0 cursor-pointer before:content-[''] before:absolute before:inset-0 before:z-1 before:opacity-25 before:bg-linear-card before:rounded-[20px] after:content-[''] after:absolute after:inset-[1px] after:z-1 after:bg-[#313131] after:rounded-[19px] after:backdrop-blur-16"
+          className="relative z-0 cursor-pointer before:content-[''] before:absolute before:inset-0 before:z-1 before:opacity-25 before:bg-linear-card before:rounded-[20px] after:content-[''] after:absolute after:inset-[1px] after:z-1 after:bg-surface after:rounded-[19px] after:backdrop-blur-16"
         >
           <div className="p-1.5 rounded-full relative z-9 bg-neutral3-50">
             {/* TODO: split SVG */}

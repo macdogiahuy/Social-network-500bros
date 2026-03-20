@@ -10,7 +10,7 @@ export default function OutlineInfo() {
       <g opacity="0.5">
         <path
           d="M10.75 11H12L12 16.25M21.25 12C21.25 17.1086 17.1086 21.25 12 21.25C6.89137 21.25 2.75 17.1086 2.75 12C2.75 6.89137 6.89137 2.75 12 2.75C17.1086 2.75 21.25 6.89137 21.25 12Z"
-          stroke="#F8F8F8"
+          stroke="currentColor"
           strokeOpacity="0.5"
           strokeWidth="1.5"
           strokeLinecap="round"
@@ -22,7 +22,7 @@ export default function OutlineInfo() {
           width="1"
           height="1"
           rx="0.5"
-          fill="#F8F8F8"
+          fill="currentColor"
           fillOpacity="0.7"
         />
         <rect
@@ -31,7 +31,7 @@ export default function OutlineInfo() {
           width="1.25"
           height="1.25"
           rx="0.625"
-          stroke="#F8F8F8"
+          stroke="currentColor"
           strokeOpacity="0.7"
           strokeWidth="0.25"
         />

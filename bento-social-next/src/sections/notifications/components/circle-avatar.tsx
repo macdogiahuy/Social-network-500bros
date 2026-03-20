@@ -26,7 +26,7 @@ export const CircleAvatar: React.FC<CircleAvatarProps> = ({
         className="h-full w-full rounded-full object-cover bg-neutral-100"
       />
       {upperItem && (
-        <div className="absolute -bottom-1 -right-1 rounded-full p-0.5 bg-[#313131]">
+        <div className="absolute -bottom-1 -right-1 rounded-full p-0.5 bg-surface">
           {upperItem}
         </div>
       )}

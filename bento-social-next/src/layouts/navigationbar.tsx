@@ -31,7 +31,7 @@ export default function NavigationBar({
     >
       {navigationItems.map(({ Icon, title, path, update }, index) => {
         const isActive = pathname === path;
-        const activeStyle = `active p-[1px] hover:bg-neutral2-15 active:bg-neutral4-30 rounded-xl before:absolute before:inset-0 before:opacity-25 before:bg-linear-card before:rounded-xl after:content-[''] after:absolute after:inset-[1px] after:bg-[#313131]  after:rounded-[11px]`;
+        const activeStyle = `active p-[1px] hover:bg-neutral2-15 active:bg-neutral4-30 rounded-xl before:absolute before:inset-0 before:opacity-25 before:bg-linear-card before:rounded-xl after:content-[''] after:absolute after:inset-[1px] after:bg-surface  after:rounded-[11px]`;
         return (
           <Link
             key={index}

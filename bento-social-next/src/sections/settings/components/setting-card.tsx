@@ -15,7 +15,7 @@ const SettingCard = ({
 }: SettingCardProps) => {
   const [expanded, setExpanded] = React.useState(true);
   return (
-    <div className="relative z-0 before:content-[''] before:absolute before:inset-0 before:z-1 before:opacity-15 before:bg-linear-card before:rounded-[20px] after:content-[''] after:absolute after:inset-[1.5px] after:z-1 after:bg-[#313131] after:rounded-[18.5px]">
+    <div className="relative z-0 before:content-[''] before:absolute before:inset-0 before:z-1 before:opacity-15 before:bg-linear-card before:rounded-[20px] after:content-[''] after:absolute after:inset-[1.5px] after:z-1 after:bg-surface after:rounded-[18.5px]">
       <div
         className={cn(
           `relative z-9 flex flex-col items-start self-stretch rounded-[20px] bg-neutral2-2 transition-all ease-in-out ${expanded ? 'max-h-full' : 'max-h-10'} first:rounded-t-[20px] last:rounded-b-[20px]`,
@@ -64,7 +64,7 @@ const SettingCardItem = ({ className, children,...props }: SettingCardItemProps)
   return (
     <div
       className={cn(
-        'flex w-full p-4 border-t border-t-neutral2-2 hover:bg-neutral2-2 items-center justify-between first:rounded-t-[20px] first:border-t-0 last:rounded-b-[20px]',
+        'flex w-full p-4 border-t border-t-neutral2-10 hover:bg-neutral1-5 items-center justify-between first:rounded-t-[20px] first:border-t-0 last:rounded-b-[20px]',
         className,
       )}
       {...props}
