@@ -9,7 +9,7 @@ export default function Check() {
     >
       <path
         d="M6 13.875L10.0541 17L18 7"
-        stroke="#F8F8F8"
+        stroke="currentColor"
         strokeOpacity="0.7"
         strokeWidth="1.5"
         strokeLinecap="round"

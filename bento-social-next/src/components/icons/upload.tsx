@@ -11,7 +11,7 @@ export default function Upload() {
         <path
           opacity="0.8"
           d="M12 3.75V15M12 3.75L16.5 8.25M12 3.75L7.5 8.25M20.25 12.75V17.25C20.25 18.9069 18.9069 20.25 17.25 20.25H6.75C5.09315 20.25 3.75 18.9069 3.75 17.25V12.75"
-          stroke="#F8F8F8"
+          stroke="currentColor"
           strokeOpacity="0.7"
           strokeWidth="1.5"
           strokeLinecap="round"

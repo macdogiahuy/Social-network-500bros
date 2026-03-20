@@ -149,7 +149,7 @@ export default function UpdatePost({
           onClick={onClose}
         />
       </div>
-      <div className="w-full h-full rounded-button shadow-button bg-[#282828b3] backdrop-blur-[50px] before:content-[''] before:absolute before:inset-0 before:rounded-button before:pointer-events-none before:border-[1.5px] before:border-[#ffffff1a] before:[mask-image:linear-gradient(175deg,#000,transparent_50%)] md:mx-auto md:w-[40rem] md:h-fit md:mt-[10%] md:rounded-button">
+      <div className="w-full h-full rounded-button shadow-button bg-surface backdrop-blur-[50px] before:content-[''] before:absolute before:inset-0 before:rounded-button before:pointer-events-none before:border-[1.5px] before:border-[#ffffff1a] before:[mask-image:linear-gradient(175deg,#000,transparent_50%)] md:mx-auto md:w-[40rem] md:h-fit md:mt-[10%] md:rounded-button">
         <div className="md:hidden w-full flex items-center justify-between p-3">
           <Button
             className="size-10 p-2.5"

@@ -39,7 +39,7 @@ const MobileSidebar = ({ onClose, className }: MobileSidebarProps) => {
   return (
     <section
       className={cn(
-        'md:hidden flex flex-col fixed z-99 inset-0 bg-surface-2 before:fixed before:z-0 before:inset-0 before:bg-[#313131]',
+        'md:hidden flex flex-col fixed z-99 inset-0 bg-surface-2 before:fixed before:z-0 before:inset-0 before:bg-surface',
         className
       )}
     >

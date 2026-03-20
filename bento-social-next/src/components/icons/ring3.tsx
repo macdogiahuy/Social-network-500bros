@@ -12,7 +12,7 @@ function Ring3({ className }: { className?: string }) {
         cx="100.5"
         cy="76"
         r="99.25"
-        stroke="#F8F8F8"
+        stroke="currentColor"
         strokeOpacity="0.01"
         strokeWidth="1.5"
       />

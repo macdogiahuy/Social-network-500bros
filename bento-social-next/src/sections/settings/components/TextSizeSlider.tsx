@@ -1,18 +1,18 @@
 import { Typography } from '@/components/typography';
-import React, { useState } from 'react';
+import React from 'react';
 import style from "@/styles/preferences-setting.module.css";
+import { useSettings } from '@/context/theme-context';
+
 interface TextSizeSliderProps {
   minValue?: number;  // Minimum font size
   maxValue?: number;  // Maximum font size
-  initialValue?: number;  // Initial font size
 }
 
 const TextSizeSlider: React.FC<TextSizeSliderProps> = ({
   minValue = 12,
   maxValue = 36,
-  initialValue = 16,
 }) => {
-  const [textSize, setTextSize] = useState(initialValue);
+  const { textSize, setTextSize } = useSettings();
 
   const handleSliderChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setTextSize(Number(event.target.value));
