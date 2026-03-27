@@ -1,7 +1,7 @@
 import { Button } from '@/components/button';
 import { Typography } from '@/components/typography';
 import { useUserProfile } from '@/context/user-context';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import SimplePeer from 'simple-peer';
 import { Socket } from 'socket.io-client';
 
@@ -10,6 +10,7 @@ type PeerSignalData = string | object;
 interface IncomingSignalPayload {
   from?: string;
   signal: PeerSignalData;
+  name?: string;
 }
 
 interface IVideoCallModalProps {
@@ -40,7 +41,21 @@ export default function VideoCallModal({
 
   const myVideo = useRef<HTMLVideoElement>(null);
   const userVideo = useRef<HTMLVideoElement>(null);
-  const connectionRef = useRef<any>();
+  const connectionRef = useRef<{ destroy: () => void } | null>(null);
+
+  const leaveCall = useCallback(() => {
+    setCallEnded(true);
+    connectionRef.current?.destroy();
+    stream?.getTracks().forEach((track) => track.stop());
+
+    if (isInitiator) {
+      socket?.emit('end_call', { to: receiverId });
+    } else if (incomingSignal?.from) {
+      socket?.emit('end_call', { to: incomingSignal.from });
+    }
+
+    onClose();
+  }, [incomingSignal?.from, isInitiator, onClose, receiverId, socket, stream]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -96,7 +111,16 @@ export default function VideoCallModal({
       socket?.off('call_accepted');
       socket?.off('call_ended');
     };
-  }, [isOpen]);
+  }, [
+    isInitiator,
+    isOpen,
+    leaveCall,
+    receiverId,
+    socket,
+    userProfile?.firstName,
+    userProfile?.id,
+    userProfile?.lastName,
+  ]);
 
   const answerCall = () => {
     if (!stream || !incomingSignal?.signal || !incomingSignal.from) return;
@@ -120,21 +144,6 @@ export default function VideoCallModal({
 
     peer.signal(incomingSignal.signal);
     connectionRef.current = peer;
-  };
-
-  const leaveCall = () => {
-    setCallEnded(true);
-    connectionRef.current?.destroy();
-    stream?.getTracks().forEach((track) => track.stop());
-
-    // Notify other user
-    if (isInitiator) {
-      socket?.emit('end_call', { to: receiverId });
-    } else if (incomingSignal?.from) {
-      socket?.emit('end_call', { to: incomingSignal.from });
-    }
-
-    onClose();
   };
 
   const toggleMute = () => {
