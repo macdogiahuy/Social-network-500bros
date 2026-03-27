@@ -14,7 +14,7 @@ This document tracks the current open issues in the Social Network 500Bros repos
 
 ## 2. Issue 2: Add user profile update functionality
 **Component:** Backend - API
-* Người dùng không thể update thông tin cá nhân. Cần tạo endpoint cho `update profile` (firstName, lastName), upload avatar, auth check.
+* Users cannot update their personal information. Need to create an endpoint for `update profile` (firstName, lastName), avatar upload, and authentication check.
 
 ### Implementation Steps
 - **Route:** Add `PUT /v1/users/profile` in the user module.
