@@ -1,20 +1,52 @@
-# Tóm tắt Issue và Kế hoạch thực hiện (PLAN.md)
+# Project Plan & Issue Tracker
 
-Dự án hiện tại có các issue sau trên GitHub Repository:
+This document tracks the current open issues in the Social Network 500Bros repository and provides a detailed implementation plan for resolving them on the `long-dev` branch.
 
-1. **Issue #1: Missing search functionality for topics** (Backend - API)
-   - *Chi tiết:* Không thể tìm kiếm topic theo tên. Cần tạo endpoint `/v1/topics/search`, update `TopicRepository` để search case-insensitive, thêm validation.
-2. **Issue #2: Add user profile update functionality** (Backend - API)
-   - *Chi tiết:* Người dùng không thể update thông tin cá nhân. Cần tạo endpoint cho `update profile` (firstName, lastName), upload avatar, auth check.
-3. **Issue #3: Implement password reset functionality** (Backend - Auth/API)
-   - *Chi tiết:* Thiếu tính năng quên mật khẩu. Tạo luồng gửi email token (`/forgot-password`), token verification, cập nhật mật khẩu mới (`/reset-password`).
-4. **Issue #4: Summary of Implemented Functionality** (Tài liệu/Review)
-   - *Chi tiết:* Bản tóm tắt cho thấy 1, 2, 3 đã có khung (hoặc được ai đó commit nhưng chưa hoàn chỉnh). Cần kiểm tra lại Db update, Prisma generate và test.
-5. **Issue #5: Theme and Settings Functionality Not Working** (Frontend - UI/UX)
-   - *Chi tiết:* Chuyển đổi theme Light/Dark/Auto và color accent trên UI không có tác dụng. Cần tạo ThemeProvider context, lưu localStorage và áp CSS root.
+## 1. Issue 1: Missing search functionality for topics
+**Component:** Backend - API
+* Users cannot search topics by name. Need to create endpoint `/v1/topics/search`, update `TopicRepository` to support case-insensitive search, and add validation.
+### Implementation Steps
+- **Route:** Add `/v1/topics/search` endpoint in `bento-microservices-express/src/modules/topic/topic.routes.ts`.
+- **Controller:** Create `searchTopics` function in `TopicController` parsing `req.query.q`.
+- **Repository:** Extend `TopicRepository` with a case-insensitive Prisma search query (`contains`, `mode: 'insensitive'`).
+- **Validation:** Use Zod to ensure the query parameter is a valid string.
+- **Frontend Integration:** Hook up a React Query `useQuery` inside the frontend search bar component to fetch results dynamically.
 
-## Kế hoạch hành động
-- **Bước 1:** Kiểm tra tiến độ thực tế trong source code (của cả Express backend và NextJS frontend) xem Issue #1, #2, #3 đã được code đến đâu dựa theo thông tin của Issue #4.
-- **Bước 2 (Fix số 1 - Backend & Database):** Sinh Prisma Client mới, hoàn thiện (hoặc sửa lỗi) cho /topics/search, /profile, /forgot-password.
-- **Bước 3 (Fix số 2 - Frontend):** Triển khai ThemeProvider cho NextJS app, giải quyết Issue #5.
-- **Bước 4 (Phản hồi từ Rabbit Code):** Dựa trên check-list của phía người dùng sau mỗi lần fix để cải thiện mã nguồn. Mọi thay đổi đều được test trước.
+## 2. Issue 2: Add user profile update functionality
+**Component:** Backend - API
+* Users cannot update their personal information. Need to create an endpoint for `update profile` (firstName, lastName), avatar upload, and authentication check.
+
+### Implementation Steps
+- **Route:** Add `PUT /v1/users/profile` in the user module.
+- **Service Layer:** Implement `updateProfile` method handling avatar file uploads via `multer` and `sharp` image optimization.
+- **Repository:** Create the corresponding Prisma update step for the `User` model.
+- **Frontend Integration:** Tie the settings form in the `bento-social-next` app utilizing `react-hook-form` and `zod` to submit the updated data.
+
+## 3. Issue 3: Implement password reset functionality
+**Component:** Backend - Auth / API
+* Missing password reset functionality. Create a flow to send email token (`/forgot-password`), token verification, and update new password (`/reset-password`).
+
+### Implementation Steps
+- **Storage Configuration:** Setup a Mailer service (e.g., Nodemailer transport or an external API).
+- **Endpoints:**
+  1. `POST /v1/auth/forgot-password`: Generates a reset token, caches it in Redis (with a TTL), and dispatches a reset link email.
+  2. `POST /v1/auth/reset-password`: Validates the token against Redis, hashes the new password via Bcrypt, and updates the DB.
+- **Frontend Integration:** Build out the missing "Forgot Password" and "Set New Password" UI sub-pages inside `src/app/login`.
+
+## 4. Issue 4: Summary of Implemented Functionality
+**Component:** Backend - Database / Prisma
+* Bản tóm tắt cho thấy 1, 2, 3 đã có khung (hoặc được ai đó commit nhưng chưa hoàn chỉnh). Cần kiểm tra lại Db update, Prisma generate và test.
+
+### Implementation Steps
+- **Audit Steps:** Trace existing schema inside `prisma/schema.prisma` to verify tracking fields. If missing, generate new migrations (`npx prisma migrate dev`).
+- **Testing:** Start the local Docker Compose cluster, run manual integration tests using Postman (using the collections found in the root), and ensure all API routes respond correctly.
+
+## 5. Issue 5: Theme and Settings Functionality Not Working
+**Component:** Frontend - UI / UX
+* Chuyển đổi theme Light/Dark/Auto và color accent trên UI không có tác dụng. Cần tạo ThemeProvider context, lưu localStorage và áp CSS root.
+
+### Implementation Steps
+- **Context:** Implement a global `<ThemeProvider />` utility component to wrap the Next.js `layout.tsx`.
+- **State Mgmt:** Use local browser storage (or `next-themes`) to detect and persist users' layout preferences (Light / Dark / Auto-system).
+- **CSS:** Define and toggle correct CSS root variables in `globals.css` which Tailwind relies on.
+- **UI Binding:** Attach toggle functionality directly to the Switch control in the user application app-bar settings dropdown.
