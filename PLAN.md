@@ -24,7 +24,7 @@ This document tracks the current open issues in the Social Network 500Bros repos
 
 ## 3. Issue 3: Implement password reset functionality
 **Component:** Backend - Auth / API
-* Thiếu tính năng quên mật khẩu. Tạo luồng gửi email token (`/forgot-password`), token verification, cập nhật mật khẩu mới (`/reset-password`).
+* Missing password reset functionality. Create a flow to send email token (`/forgot-password`), token verification, and update new password (`/reset-password`).
 
 ### Implementation Steps
 - **Storage Configuration:** Setup a Mailer service (e.g., Nodemailer transport or an external API).
