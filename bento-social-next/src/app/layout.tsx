@@ -35,7 +35,7 @@ export default function RootLayout({
   console.log('- Final HOST_API:', HOST_API);
 
   return (
-    <html lang="en">
+    <html lang="en" className="dark">
       <head>
         <link
           rel="preload"
