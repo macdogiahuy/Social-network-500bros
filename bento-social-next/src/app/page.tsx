@@ -1,3 +1,4 @@
+import MainLayout from './(main)/layout';
 import HomeView from '@/sections/home/view/home-view';
 
 export const metadata = {
@@ -7,5 +8,9 @@ export const metadata = {
 export const dynamic = 'force-dynamic';
 
 export default function Home() {
-  return <HomeView />;
+  return (
+    <MainLayout>
+      <HomeView />
+    </MainLayout>
+  );
 }
