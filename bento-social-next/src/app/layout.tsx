@@ -36,13 +36,7 @@ export default function RootLayout({
 
   return (
     <html lang="en" className="dark">
-      <head>
-        <link
-          rel="preload"
-          href="/_next/static/css/app/layout.css"
-          as="style"
-        />
-      </head>
+      <head />
       <body className="min-h-screen block relative bg-cushion h-full w-full before:fixed before:inset-0">
         <AppProviders>{children}</AppProviders>
       </body>
