@@ -126,7 +126,7 @@ export default function LoginView() {
             <div className="flex flex-col mb-[2.5rem] items-center gap-6">
               <LogoSVG className="object-contain w-[150px]" />
 
-              <Typography level="h4" className="text-primary">
+              <Typography level="h4" className="text-white">
                 Sign in to Social
               </Typography>
             </div>
@@ -137,11 +137,11 @@ export default function LoginView() {
                   name="username"
                   placeholder="Username"
                   value={username}
-                  className="w-full bg-neutral2-5 placeholder:text-tertiary base text-primary text-sm px-5 py-4 rounded-xl transition border-[1.5px] border-transparent focus:border-neutral2-10"
+                  className="w-full bg-white/5 placeholder:text-white/35 base text-white text-sm px-5 py-4 rounded-xl transition border-[1.5px] border-white/10 focus:border-white/25"
                   onChange={(value: string) => setUsername(value)}
                 />
                 {usernameError && (
-                  <Typography level="captionr" className="text-red-500">
+                  <Typography level="captionr" className="text-red-400">
                     {usernameError}
                   </Typography>
                 )}
@@ -151,11 +151,11 @@ export default function LoginView() {
                   placeholder="Password"
                   value={password}
                   debounce={0}
-                  className="w-full bg-neutral2-5 placeholder:text-tertiary base text-primary text-sm px-5 py-4 rounded-xl transition border-[1.5px] border-transparent focus:border-neutral2-10"
+                  className="w-full bg-white/5 placeholder:text-white/35 base text-white text-sm px-5 py-4 rounded-xl transition border-[1.5px] border-white/10 focus:border-white/25"
                   onChange={(value: string) => setPassword(value)}
                 />
                 {passwordError && (
-                  <Typography level="captionr" className="text-red-500">
+                  <Typography level="captionr" className="text-red-400">
                     {passwordError}
                   </Typography>
                 )}
@@ -164,10 +164,10 @@ export default function LoginView() {
               <div className="flex flex-col gap-3">
                 <Button
                   type="submit"
-                  className={`w-full base px-[2rem] py-[0.875rem] ${loading ? 'bg-neutral2-5 opacity-50' : 'opacity-100'}`}
+                  className={`w-full base px-[2rem] py-[0.875rem] ${loading ? 'bg-white/10 opacity-50' : 'bg-white opacity-100 hover:bg-white/90'}`}
                   disabled={loading}
                   child={
-                    <Typography level="base2sm" className="text-tertiary">
+                    <Typography level="base2sm" className="text-neutral-900">
                       {loading ? 'Loading...' : 'Login'}
                     </Typography>
                   }
@@ -183,7 +183,7 @@ export default function LoginView() {
                           <GoogleSVG className="w-5 h-5" />
                           <Typography
                             level="base2sm"
-                            className="text-secondary"
+                            className="text-neutral-700"
                           >
                             Sign in with Google
                           </Typography>
@@ -206,11 +206,11 @@ export default function LoginView() {
 
                 <Typography
                   level="captionr"
-                  className="opacity-80 flex items-center gap-2 text-secondary justify-center"
+                  className="opacity-80 flex items-center gap-2 text-white/45 justify-center"
                 >
                   Don&rsquo;t have an account?
-                  <a href="/register" className="opacity-100 font-semibold">
-                    <Typography level="captionsm" className="opacity-100">
+                  <a href="/register" className="opacity-100 font-semibold text-white/80">
+                    <Typography level="captionsm" className="opacity-100 text-white/80">
                       Sign up, it&rsquo;s free!
                     </Typography>
                   </a>
