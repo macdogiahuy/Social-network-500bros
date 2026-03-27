@@ -42,7 +42,7 @@ export const useSettings = () => {
 
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   const [mounted, setMounted] = useState(false);
-  const [activeTheme, setActiveThemeState] = useState<ThemeOption>(ThemeOption.auto);
+  const [activeTheme, setActiveThemeState] = useState<ThemeOption>(ThemeOption.dark);
   const [accentColor, setAccentColorState] = useState<string>('blue');
   const [textSize, setTextSizeState] = useState<number>(20);
   const [brightness, setBrightnessState] = useState<number>(100);
