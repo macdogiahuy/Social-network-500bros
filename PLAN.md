@@ -4,8 +4,7 @@ This document tracks the current open issues in the Social Network 500Bros repos
 
 ## 1. Issue 1: Missing search functionality for topics
 **Component:** Backend - API
-* Không thể tìm kiếm topic theo tên. Cần tạo endpoint `/v1/topics/search`, update `TopicRepository` để search case-insensitive, thêm validation.
-
+* Users cannot search topics by name. Need to create endpoint `/v1/topics/search`, update `TopicRepository` to support case-insensitive search, and add validation.
 ### Implementation Steps
 - **Route:** Add `/v1/topics/search` endpoint in `bento-microservices-express/src/modules/topic/topic.routes.ts`.
 - **Controller:** Create `searchTopics` function in `TopicController` parsing `req.query.q`.
