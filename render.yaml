@@ -4,8 +4,9 @@ services:
   - type: web
     name: bento-microservices
     env: node
-    buildCommand: npm install && npm run build
-    startCommand: npm run start
+    rootDir: bento-microservices-express
+    buildCommand: yarn install && npx prisma generate && yarn build
+    startCommand: yarn start
     envVars:
       - key: NODE_ENV
         value: production
