@@ -164,6 +164,7 @@ export default function CreateGroupDialog({
                     </div>
                     <Avatar
                       src={user.avatar || '/img/default-avatar.jpg'}
+                      alt={`${user.firstName} ${user.lastName}`}
                       size={40}
                     />
                     <div className="flex flex-col">

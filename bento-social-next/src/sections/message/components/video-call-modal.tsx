@@ -5,13 +5,20 @@ import { useEffect, useRef, useState } from 'react';
 import SimplePeer from 'simple-peer';
 import { Socket } from 'socket.io-client';
 
+type PeerSignalData = string | object;
+
+interface IncomingSignalPayload {
+  from?: string;
+  signal: PeerSignalData;
+}
+
 interface IVideoCallModalProps {
   isOpen: boolean;
   onClose: () => void;
   socket: Socket | null;
   receiverId: string;
   isInitiator: boolean;
-  incomingSignal?: any; // Signal data from the caller if answering
+  incomingSignal?: IncomingSignalPayload;
   callerName?: string;
 }
 
@@ -33,7 +40,7 @@ export default function VideoCallModal({
 
   const myVideo = useRef<HTMLVideoElement>(null);
   const userVideo = useRef<HTMLVideoElement>(null);
-  const connectionRef = useRef<SimplePeer.Instance>();
+  const connectionRef = useRef<any>();
 
   useEffect(() => {
     if (!isOpen) return;
@@ -54,7 +61,7 @@ export default function VideoCallModal({
             stream: currentStream,
           });
 
-          peer.on('signal', (data) => {
+          peer.on('signal', (data: PeerSignalData) => {
             socket?.emit('call_user', {
               userToCall: receiverId,
               signalData: data,
@@ -63,13 +70,13 @@ export default function VideoCallModal({
             });
           });
 
-          peer.on('stream', (remoteStream) => {
+          peer.on('stream', (remoteStream: MediaStream) => {
             if (userVideo.current) {
               userVideo.current.srcObject = remoteStream;
             }
           });
 
-          socket?.on('call_accepted', (signal) => {
+          socket?.on('call_accepted', (signal: PeerSignalData) => {
             setCallAccepted(true);
             peer.signal(signal);
           });
@@ -92,18 +99,20 @@ export default function VideoCallModal({
   }, [isOpen]);
 
   const answerCall = () => {
+    if (!stream || !incomingSignal?.signal || !incomingSignal.from) return;
+
     setCallAccepted(true);
     const peer = new SimplePeer({
       initiator: false,
       trickle: false,
-      stream: stream!,
+      stream,
     });
 
-    peer.on('signal', (data) => {
+    peer.on('signal', (data: PeerSignalData) => {
       socket?.emit('answer_call', { signal: data, to: incomingSignal.from });
     });
 
-    peer.on('stream', (remoteStream) => {
+    peer.on('stream', (remoteStream: MediaStream) => {
       if (userVideo.current) {
         userVideo.current.srcObject = remoteStream;
       }
