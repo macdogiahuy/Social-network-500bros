@@ -87,7 +87,7 @@ export default function ConversationDetailPage({
       setMessages((prevMessages) => {
         return prevMessages.map((msg) => {
           if (msg.id === data.messageId) {
-            let reactions = msg.reactions ? [...msg.reactions] : [];
+            const reactions = msg.reactions ? [...msg.reactions] : [];
             const existingIndex = reactions.findIndex(
               (r) => r.userId === data.userId
             );
