@@ -64,6 +64,12 @@ export default function Post({
   const [isConfirm, setIsConfirm] = React.useState<boolean>(false);
 
   const isPostType = 'isFeatured' in data || 'hasSaved' in data;
+  const author = localData.author;
+  const authorHref = author?.id ? `/profile/${author.id}` : '#';
+  const authorName = [author?.firstName, author?.lastName]
+    .filter(Boolean)
+    .join(' ')
+    .trim() || 'Unknown user';
 
   const handleLikeClick = async () => {
     if (!isPostType) return;
@@ -136,9 +142,10 @@ export default function Post({
 
   const handleReplyComment = () => {
     if (isPostType) return;
+    if (!author) return;
     setParentComment?.({
       id: data.id,
-      fullname: `${data.author.firstName} ${data.author.lastName}`,
+      fullname: `${author.firstName ?? ''} ${author.lastName ?? ''}`.trim(),
     });
   };
 
@@ -190,22 +197,22 @@ export default function Post({
     >
       <div className="flex items-start gap-5">
         <Link
-          href={`/profile/${localData.author.id}`}
+          href={authorHref}
           className="cursor-pointer"
         >
-          <Avatar alt="avatar" src={localData.author.avatar || ''} size={44} />
+          <Avatar alt="avatar" src={author?.avatar || ''} size={44} />
         </Link>
         <div className="w-full flex flex-col gap-2">
           <div className="relative z-0 flex justify-items-auto items-center">
             <Link
-              href={`/profile/${localData.author.id}`}
+              href={authorHref}
               className="cursor-pointer"
             >
               <Typography
                 level="base2m"
                 className="text-primary font-bold justify-self-start opacity-80 mr-4"
               >
-                {localData.author?.firstName} {localData.author?.lastName}
+                {authorName}
               </Typography>
             </Link>
             <Typography
@@ -215,7 +222,7 @@ export default function Post({
               {relativeTime(new Date(localData.createdAt))}
             </Typography>
 
-            {data.author.id === (userProfile as IUserProfile).id && (
+            {data.author?.id === (userProfile as IUserProfile).id && (
               <MoreIcon onClick={handleMoreOptions} />
             )}
           </div>
