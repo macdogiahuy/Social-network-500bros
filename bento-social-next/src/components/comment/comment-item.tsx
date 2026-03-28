@@ -60,6 +60,11 @@ export default function CommentItem({
   const [editContent, setEditContent] = useState(data.content);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isConfirmDelete, setIsConfirmDelete] = useState(false);
+  const author = localData.author;
+  const authorHref = author?.id ? `/profile/${author.id}` : '#';
+  const authorName =
+    [author?.firstName, author?.lastName].filter(Boolean).join(' ').trim() ||
+    'Unknown user';
 
   const handleMoreOptions = () => {
     setOpenMoreOptionsId?.(openMoreOptionsId === data.id ? null : data.id);
@@ -95,7 +100,9 @@ export default function CommentItem({
     if (onReply) {
       onReply({
         id: data.id,
-        fullname: `${data.author.firstName} ${data.author.lastName}`,
+        fullname:
+          [author?.firstName, author?.lastName].filter(Boolean).join(' ').trim() ||
+          'Unknown user',
       });
     }
   };
@@ -146,20 +153,20 @@ export default function CommentItem({
 
   return (
     <div className={`w-full flex gap-2 ${isReply ? 'pl-8' : ''}`}>
-      <Link href={`/profile/${localData.author.id}`}>
-        <Avatar alt="avatar" src={localData.author.avatar || ''} size={32} />
+      <Link href={authorHref}>
+        <Avatar alt="avatar" src={author?.avatar || ''} size={32} />
       </Link>
 
       <div className="flex-1">
         <div className="bg-neutral2-5 rounded-xl p-2 relative">
           <div className="flex items-center justify-between">
-            <Link href={`/profile/${localData.author.id}`}>
+            <Link href={authorHref}>
               <Typography level="base2m" className="text-primary font-bold">
-                {localData.author.firstName} {localData.author.lastName}
+                {authorName}
               </Typography>
             </Link>
 
-            {localData.author.id === (userProfile as IUserProfile).id && (
+            {author?.id === (userProfile as IUserProfile).id && (
               <MoreIcon onClick={handleMoreOptions} />
             )}
 

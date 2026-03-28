@@ -2,6 +2,7 @@
 
 import { useAuth } from '@/context/auth-context';
 import { HOST_API } from '@/global-config';
+import { usePathname } from 'next/navigation';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 
@@ -21,9 +22,11 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const { token } = useAuth();
+  const pathname = usePathname();
+  const shouldConnectSocket = pathname?.startsWith('/messages') ?? false;
 
   useEffect(() => {
-    if (!token) {
+    if (!token || !shouldConnectSocket) {
       if (socket) {
         socket.disconnect();
         setSocket(null);
@@ -60,7 +63,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     return () => {
       socketInstance.disconnect();
     };
-  }, [token]);
+  }, [token, shouldConnectSocket]);
 
   return (
     <SocketContext.Provider value={{ socket, isConnected }}>
