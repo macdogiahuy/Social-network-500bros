@@ -1,3 +1,4 @@
+# Secrets are loaded from startup/.env via env_file — nothing hardcoded here
 version: '3'
 
 services:
@@ -8,10 +9,9 @@ services:
     container_name: mysql-bento
     restart: unless-stopped
     ports:
-      - '3307:3306'
-    environment:
-      - MYSQL_ROOT_PASSWORD=12345678
-      - MYSQL_DATABASE=social_network
+      - '${MYSQL_PORT:-3306}:3306'
+    env_file:
+      - ../startup/.env # reads MYSQL_ROOT_PASSWORD, MYSQL_DATABASE from one place
     volumes:
       - social_mysql:/var/lib/mysql
       - ./docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
@@ -26,7 +26,7 @@ services:
           memory: 256M
           cpus: '0.25'
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -37,26 +37,22 @@ services:
         soft: 20000
         hard: 40000
     command: >
-      --performance_schema=OFF
-      --innodb_buffer_pool_size=256M
-      --innodb_log_file_size=64M
-      --max_connections=100
-      --thread_cache_size=50
+      --performance_schema=OFF --innodb_buffer_pool_size=256M --innodb_log_file_size=64M --max_connections=100 --thread_cache_size=50
 
   redis:
     image: redis:6.0
     container_name: redis
     restart: unless-stopped
     ports:
-      - '6379:6379'
+      - '${REDIS_PORT:-6379}:6379'
     volumes:
       - redis-bento:/data
       - type: bind
         source: ./redis/redis.conf
         target: /usr/local/etc/redis/redis.conf
         read_only: true
-    environment:
-      - REDIS_PASSWORD=macdogiahuy_redis
+    env_file:
+      - ../startup/.env # reads REDIS_PASSWORD from one place
     networks:
       - social
     deploy:
@@ -67,7 +63,7 @@ services:
         reservations:
           memory: 128M
           cpus: '0.1'
-    command: redis-server --requirepass macdogiahuy_redis --maxmemory 256mb --maxmemory-policy allkeys-lru
+    command: redis-server --requirepass ${REDIS_PASSWORD} --maxmemory 256mb --maxmemory-policy allkeys-lru
     stop_grace_period: 10s
     ulimits:
       nofile:
