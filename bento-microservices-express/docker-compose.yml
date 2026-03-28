@@ -11,7 +11,7 @@ services:
     ports:
       - '${MYSQL_PORT:-3306}:3306'
     env_file:
-      - ../startup/.env # reads MYSQL_ROOT_PASSWORD, MYSQL_DATABASE from one place
+      - .env # reads MYSQL_ROOT_PASSWORD, MYSQL_DATABASE from one place
     volumes:
       - social_mysql:/var/lib/mysql
       - ./docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
@@ -26,7 +26,7 @@ services:
           memory: 256M
           cpus: '0.25'
     healthcheck:
-      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      test: [ "CMD-SHELL", "mysqladmin ping -h localhost -u root -p${MYSQL_ROOT_PASSWORD} --silent" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -52,7 +52,7 @@ services:
         target: /usr/local/etc/redis/redis.conf
         read_only: true
     env_file:
-      - ../startup/.env # reads REDIS_PASSWORD from one place
+      - .env # reads REDIS_PASSWORD from one place
     networks:
       - social
     deploy:
