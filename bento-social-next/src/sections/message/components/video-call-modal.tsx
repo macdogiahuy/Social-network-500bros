@@ -1,9 +1,17 @@
 import { Button } from '@/components/button';
 import { Typography } from '@/components/typography';
 import { useUserProfile } from '@/context/user-context';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import SimplePeer from 'simple-peer';
 import { Socket } from 'socket.io-client';
+
+type PeerSignalData = string | object;
+
+interface IncomingSignalPayload {
+  from?: string;
+  signal: PeerSignalData;
+  name?: string;
+}
 
 interface IVideoCallModalProps {
   isOpen: boolean;
@@ -11,7 +19,7 @@ interface IVideoCallModalProps {
   socket: Socket | null;
   receiverId: string;
   isInitiator: boolean;
-  incomingSignal?: any; // Signal data from the caller if answering
+  incomingSignal?: IncomingSignalPayload;
   callerName?: string;
 }
 
@@ -33,7 +41,21 @@ export default function VideoCallModal({
 
   const myVideo = useRef<HTMLVideoElement>(null);
   const userVideo = useRef<HTMLVideoElement>(null);
-  const connectionRef = useRef<SimplePeer.Instance>();
+  const connectionRef = useRef<{ destroy: () => void } | null>(null);
+
+  const leaveCall = useCallback(() => {
+    setCallEnded(true);
+    connectionRef.current?.destroy();
+    stream?.getTracks().forEach((track) => track.stop());
+
+    if (isInitiator) {
+      socket?.emit('end_call', { to: receiverId });
+    } else if (incomingSignal?.from) {
+      socket?.emit('end_call', { to: incomingSignal.from });
+    }
+
+    onClose();
+  }, [incomingSignal?.from, isInitiator, onClose, receiverId, socket, stream]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -54,7 +76,7 @@ export default function VideoCallModal({
             stream: currentStream,
           });
 
-          peer.on('signal', (data) => {
+          peer.on('signal', (data: PeerSignalData) => {
             socket?.emit('call_user', {
               userToCall: receiverId,
               signalData: data,
@@ -63,13 +85,13 @@ export default function VideoCallModal({
             });
           });
 
-          peer.on('stream', (remoteStream) => {
+          peer.on('stream', (remoteStream: MediaStream) => {
             if (userVideo.current) {
               userVideo.current.srcObject = remoteStream;
             }
           });
 
-          socket?.on('call_accepted', (signal) => {
+          socket?.on('call_accepted', (signal: PeerSignalData) => {
             setCallAccepted(true);
             peer.signal(signal);
           });
@@ -89,21 +111,32 @@ export default function VideoCallModal({
       socket?.off('call_accepted');
       socket?.off('call_ended');
     };
-  }, [isOpen]);
+  }, [
+    isInitiator,
+    isOpen,
+    leaveCall,
+    receiverId,
+    socket,
+    userProfile?.firstName,
+    userProfile?.id,
+    userProfile?.lastName,
+  ]);
 
   const answerCall = () => {
+    if (!stream || !incomingSignal?.signal || !incomingSignal.from) return;
+
     setCallAccepted(true);
     const peer = new SimplePeer({
       initiator: false,
       trickle: false,
-      stream: stream!,
+      stream,
     });
 
-    peer.on('signal', (data) => {
+    peer.on('signal', (data: PeerSignalData) => {
       socket?.emit('answer_call', { signal: data, to: incomingSignal.from });
     });
 
-    peer.on('stream', (remoteStream) => {
+    peer.on('stream', (remoteStream: MediaStream) => {
       if (userVideo.current) {
         userVideo.current.srcObject = remoteStream;
       }
@@ -111,21 +144,6 @@ export default function VideoCallModal({
 
     peer.signal(incomingSignal.signal);
     connectionRef.current = peer;
-  };
-
-  const leaveCall = () => {
-    setCallEnded(true);
-    connectionRef.current?.destroy();
-    stream?.getTracks().forEach((track) => track.stop());
-
-    // Notify other user
-    if (isInitiator) {
-      socket?.emit('end_call', { to: receiverId });
-    } else if (incomingSignal?.from) {
-      socket?.emit('end_call', { to: incomingSignal.from });
-    }
-
-    onClose();
   };
 
   const toggleMute = () => {

@@ -14,7 +14,7 @@ import { IConversation } from '@/interfaces/conversation';
 import { IUserProfile } from '@/interfaces/user';
 import { formatDistanceToNow } from 'date-fns';
 import { TrashIcon } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import CreateGroupDialog from './create-group-dialog';
 
 //----------------------------------------------------------------------
@@ -33,7 +33,7 @@ export default function ConversationSidebar({
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
       // Fetch users
@@ -81,10 +81,11 @@ export default function ConversationSidebar({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [searchQuery, userProfile]);
+
   useEffect(() => {
     fetchData();
-  }, [searchQuery, userProfile]);
+  }, [fetchData]);
 
   const handleUserClick = async (userId: string) => {
     try {

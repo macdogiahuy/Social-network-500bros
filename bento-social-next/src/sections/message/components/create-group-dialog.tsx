@@ -16,11 +16,12 @@ import { AddIcon } from '@/components/icons';
 import { Input } from '@/components/input';
 import { Typography } from '@/components/typography';
 import { useUserProfile } from '@/context/user-context';
+import { IConversation } from '@/interfaces/conversation';
 import { IUserProfile } from '@/interfaces/user';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 interface CreateGroupDialogProps {
-  onGroupCreated: (conversation: any) => void;
+  onGroupCreated: (conversation: IConversation) => void;
 }
 
 export default function CreateGroupDialog({
@@ -34,25 +35,11 @@ export default function CreateGroupDialog({
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    if (isOpen) {
-      fetchUsers();
-    }
-  }, [isOpen, searchQuery]);
-
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       const params = searchQuery ? { search: searchQuery } : undefined;
-      const usersRes: any = await getAllUsers(params);
-
-      let usersList: IUserProfile[] = [];
-      if (Array.isArray(usersRes)) {
-        usersList = usersRes;
-      } else if (Array.isArray(usersRes?.data)) {
-        usersList = usersRes.data;
-      } else if (Array.isArray(usersRes?.data?.data)) {
-        usersList = usersRes.data.data;
-      }
+      const usersRes = await getAllUsers(params);
+      const usersList = Array.isArray(usersRes?.data) ? usersRes.data : [];
 
       if (userProfile) {
         setUsers(usersList.filter((u) => u.id !== userProfile.id));
@@ -62,7 +49,13 @@ export default function CreateGroupDialog({
     } catch (error) {
       console.error('Error fetching users:', error);
     }
-  };
+  }, [searchQuery, userProfile]);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchUsers();
+    }
+  }, [fetchUsers, isOpen]);
 
   const toggleUserSelection = (userId: string) => {
     setSelectedUserIds((prev) =>
@@ -77,13 +70,13 @@ export default function CreateGroupDialog({
 
     setIsLoading(true);
     try {
-      const response: any = await initiateConversation({
+      const response = await initiateConversation({
         userIds: selectedUserIds,
         name: groupName,
         // image: ... (optional, can add file upload later)
       });
 
-      const newConversation = response?.data || response;
+      const newConversation = response.data;
       onGroupCreated(newConversation);
       setIsOpen(false);
       setGroupName('');
@@ -164,6 +157,7 @@ export default function CreateGroupDialog({
                     </div>
                     <Avatar
                       src={user.avatar || '/img/default-avatar.jpg'}
+                      alt={`${user.firstName} ${user.lastName}`}
                       size={40}
                     />
                     <div className="flex flex-col">
