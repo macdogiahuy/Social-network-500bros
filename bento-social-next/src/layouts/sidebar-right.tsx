@@ -2,7 +2,7 @@ import { usePathname } from 'next/navigation';
 import React from 'react';
 
 import { getPosts, getTrendingPosts } from '@/apis/post';
-import { followUser, getUserFollower } from '@/apis/user';
+import { followUser, getUserFollower, getUserFollowing } from '@/apis/user';
 import { useUserProfile } from '@/context/user-context';
 
 import { IFollower } from '@/interfaces/follower';
@@ -59,8 +59,21 @@ export default function SidebarRight({ className }: SidebarRightProps) {
 
       setIsLoading((prev) => ({ ...prev, followers: true }));
       try {
-        const response = await getUserFollower(userProfile.id);
-        setFollowers(response.data);
+        const [followersResponse, followingsResponse] = await Promise.all([
+          getUserFollower(userProfile.id),
+          getUserFollowing(userProfile.id),
+        ]);
+
+        const combined = [...followersResponse.data, ...followingsResponse.data]
+          .filter((user) => user.id !== userProfile.id)
+          .reduce<IFollower[]>((acc, user) => {
+            if (!acc.some((item) => item.id === user.id)) {
+              acc.push(user);
+            }
+            return acc;
+          }, []);
+
+        setFollowers(combined);
       } catch (error) {
         console.error('Error fetching followers:', error);
         setError((prev) => ({
@@ -166,6 +179,10 @@ export default function SidebarRight({ className }: SidebarRightProps) {
                   <SplashScreen />
                 ) : error.followers ? (
                   <div>{error.followers}</div>
+                ) : followers.length === 0 ? (
+                  <div className="rounded-[1.25rem] bg-neutral2-2 p-4 text-center text-tertiary">
+                    No followers or following users yet.
+                  </div>
                 ) : (
                   followers.map((follower) => (
                     <ProfileCard
