@@ -75,6 +75,7 @@ export default function MessageItem({
 
     if (isImage && !imageError) {
       return (
+        // eslint-disable-next-line @next/next/no-img-element
         <img
           src={fileUrl}
           alt={message.fileName || 'Image'}
@@ -142,6 +143,7 @@ export default function MessageItem({
       {!isOwnMessage && (
         <Avatar
           src={message.sender?.avatar || '/img/default-avatar.jpg'}
+          alt={`${message.sender?.firstName || ''} ${message.sender?.lastName || ''}`.trim() || 'User avatar'}
           size={32}
           className="mb-1 shrink-0"
         />

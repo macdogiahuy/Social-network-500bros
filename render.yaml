@@ -1,0 +1,40 @@
+# Render Blueprint
+# This file can be used to deploy the backend microservices to Render automatically.
+services:
+  - type: web
+    name: bento-microservices
+    env: node
+    rootDir: bento-microservices-express
+    buildCommand: cd bento-microservices-express && pnpm install --frozen-lockfile && npx prisma generate && pnpm build
+    startCommand: cd bento-microservices-express && pnpm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 8080
+      - key: HOST
+        value: 0.0.0.0
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: CDN_URL
+        value: https://bento-microservices.onrender.com/uploads
+      - key: VERIFY_TOKEN_URL
+        value: http://127.0.0.1:8080/v1/rpc/introspect
+      - key: POST_SERVICE_URL
+        value: http://127.0.0.1:8080/v1
+      - key: USER_SERVICE_URL
+        value: http://127.0.0.1:8080/v1
+      - key: COMMENT_SERVICE_URL
+        value: http://127.0.0.1:8080/v1
+      - key: FOLLOW_SERVICE_URL
+        value: http://127.0.0.1:8080/v1
+      - key: TOPIC_SERVICE_URL
+        value: http://127.0.0.1:8080/v1
+      - key: POST_LIKE_SERVICE_URL
+        value: http://127.0.0.1:8080/v1
+      - key: POST_SAVED_SERVICE_URL
+        value: http://127.0.0.1:8080/v1
