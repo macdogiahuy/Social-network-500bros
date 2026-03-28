@@ -10,28 +10,22 @@ export const initiateConversation = async (data: {
   name?: string;
   image?: string;
 }): Promise<{ data: IConversation }> => {
-  console.log('Initiating conversation with data:', data);
-  console.log('Current token:', sessionStorage.getItem('token'));
-  console.log(
-    'Current Authorization header:',
-    axiosInstance.defaults.headers.common['Authorization']
-  );
-
   try {
     const response = await axiosInstance.post(
       `${VERSION_PREFIX}/conversations/initiate`,
       data
     );
-    console.log('Conversation initiation response:', response);
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
-      console.error('Conversation initiation error:', error);
-      console.error('Error response:', error.response?.data);
+      if (error.response?.status === 404) {
+        throw new Error('Messaging is not available on this deployment yet.');
+      }
+
+      throw new Error(error.response?.data?.message || 'Failed to start conversation.');
     } else {
-      console.error('Unknown error:', error);
+      throw error;
     }
-    throw error;
   }
 };
 
