@@ -27,9 +27,12 @@ export const getTrendingPosts = async (params?: {
   page?: number;
 }): Promise<IApiResponse<IPost[]>> => {
   const response = await axiosInstance.get<IApiResponse<IPost[]>>(
-    '/v1/feed/trending',
+    endpoints.post.get,
     {
-      params,
+      params: {
+        ...params,
+        isFeatured: true,
+      },
     }
   );
   return response.data;
