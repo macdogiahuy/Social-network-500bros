@@ -1,7 +1,7 @@
 'use client';
 
 import { useAuth } from '@/context/auth-context';
-import { HOST_API } from '@/global-config';
+import { SOCKET_HOST_API } from '@/global-config';
 import { usePathname } from 'next/navigation';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
@@ -27,21 +27,20 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     if (!token || !shouldConnectSocket) {
-      if (socket) {
-        socket.disconnect();
-        setSocket(null);
-        setIsConnected(false);
-      }
       return;
     }
 
-    const socketInstance = io(HOST_API, {
+    const socketInstance = io(SOCKET_HOST_API, {
       auth: {
         token,
       },
-      transports: ['polling', 'websocket'],
-      reconnectionAttempts: 5,
-      timeout: 10000,
+      transports: ['websocket'],
+      upgrade: false,
+      reconnection: true,
+      reconnectionAttempts: 8,
+      reconnectionDelay: 1500,
+      reconnectionDelayMax: 5000,
+      timeout: 20000,
     });
 
     socketInstance.on('connect', () => {
@@ -55,13 +54,16 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
     socketInstance.on('connect_error', (err) => {
-      console.error('Socket connection error:', err);
+      console.error('Socket connection error:', err.message);
+      setIsConnected(false);
     });
 
     setSocket(socketInstance);
 
     return () => {
       socketInstance.disconnect();
+      setSocket(null);
+      setIsConnected(false);
     };
   }, [token, shouldConnectSocket]);
 
