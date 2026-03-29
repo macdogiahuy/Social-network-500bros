@@ -90,3 +90,42 @@ function resolveDefaultFolder(mimeType?: string) {
   if (mimeType.startsWith('audio/')) return 'audio';
   return 'files';
 }
+
+export async function deleteCloudinaryAssetByUrl(fileUrl?: string | null) {
+  if (!fileUrl || !fileUrl.includes('res.cloudinary.com')) return false;
+
+  ensureCloudinaryConfigured();
+
+  try {
+    const url = new URL(fileUrl);
+    const pathParts = url.pathname.split('/').filter(Boolean);
+    const uploadIndex = pathParts.findIndex((part) => part === 'upload');
+
+    if (uploadIndex === -1 || uploadIndex < 1) {
+      return false;
+    }
+
+    const resourceType = pathParts[uploadIndex - 1] as 'image' | 'video' | 'raw';
+    const versionIndex =
+      uploadIndex + 1 < pathParts.length && /^v\d+$/.test(pathParts[uploadIndex + 1])
+        ? uploadIndex + 1
+        : uploadIndex;
+    const publicIdParts = pathParts.slice(versionIndex + 1);
+
+    if (publicIdParts.length === 0) {
+      return false;
+    }
+
+    const lastPart = publicIdParts[publicIdParts.length - 1];
+    publicIdParts[publicIdParts.length - 1] = lastPart.replace(/\.[^.]+$/, '');
+    const publicId = publicIdParts.join('/');
+
+    await cloudinary.uploader.destroy(publicId, {
+      resource_type: resourceType || 'image'
+    });
+
+    return true;
+  } catch {
+    return false;
+  }
+}

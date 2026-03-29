@@ -119,12 +119,25 @@ export default function ConversationDetailPage({
       });
     };
 
+    const handleMessageDeleted = (data: {
+      conversationId: string;
+      messageId: string;
+    }) => {
+      if (data.conversationId !== id) return;
+
+      setMessages((prevMessages) =>
+        prevMessages.filter((msg) => msg.id !== data.messageId)
+      );
+    };
+
     socket.on('new_message', handleNewMessage);
     socket.on('message_reaction', handleMessageReaction);
+    socket.on('message_deleted', handleMessageDeleted);
 
     return () => {
       socket.off('new_message', handleNewMessage);
       socket.off('message_reaction', handleMessageReaction);
+      socket.off('message_deleted', handleMessageDeleted);
     };
   }, [socket, id]);
 
@@ -266,6 +279,11 @@ export default function ConversationDetailPage({
               key={message.id}
               message={message}
               isOwnMessage={message.senderId === userProfile?.id}
+              onDelete={(messageId) => {
+                setMessages((prevMessages) =>
+                  prevMessages.filter((msg) => msg.id !== messageId)
+                );
+              }}
             />
           ))
         )}

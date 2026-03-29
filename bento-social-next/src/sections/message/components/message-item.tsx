@@ -1,6 +1,6 @@
-import { reactToMessage } from '@/apis/conversation';
+import { deleteMessage, reactToMessage } from '@/apis/conversation';
 import { Avatar } from '@/components/avatar';
-import { FolderIcon, HeartIcon } from '@/components/icons';
+import { FolderIcon, HeartIcon, TrashIcon } from '@/components/icons';
 import { Typography } from '@/components/typography';
 import { useUserProfile } from '@/context/user-context';
 import { HOST_API, MEDIA_HOST_API } from '@/global-config';
@@ -15,11 +15,13 @@ const REACTION_EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '😡'];
 interface IMessageItemProps {
   message: IMessage;
   isOwnMessage: boolean;
+  onDelete?: (messageId: string) => void;
 }
 
 export default function MessageItem({
   message,
   isOwnMessage,
+  onDelete,
 }: IMessageItemProps) {
   const { userProfile } = useUserProfile();
   const [showReactions, setShowReactions] = useState(false);
@@ -82,6 +84,18 @@ export default function MessageItem({
 
       return currentIndex;
     });
+  };
+
+  const handleDeleteMessage = async () => {
+    if (!window.confirm('Delete this message?')) return;
+
+    try {
+      await deleteMessage(message.conversationId, message.id);
+      onDelete?.(message.id);
+    } catch (error) {
+      console.error('Error deleting message:', error);
+      alert('Failed to delete message');
+    }
   };
 
   const renderFileContent = () => {
@@ -183,6 +197,16 @@ export default function MessageItem({
             : 'bg-neutral2-2 rounded-bl-none'
         }`}
       >
+        {isOwnMessage && (
+          <button
+            onClick={handleDeleteMessage}
+            className="absolute -top-2 -left-2 p-1.5 rounded-full border border-neutral1-10 bg-neutral4-95 shadow-sm text-secondary opacity-0 group-hover:opacity-100 hover:bg-neutral4-80 hover:text-primary transition-all"
+            title="Delete message"
+          >
+            <TrashIcon />
+          </button>
+        )}
+
         {/* Reaction Picker & Trigger */}
         <div
           className={`absolute top-1/2 -translate-y-1/2 z-10 flex items-center ${

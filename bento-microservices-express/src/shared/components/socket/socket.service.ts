@@ -126,6 +126,15 @@ export class SocketService {
       }
     });
 
+    await redis.subscribe('MESSAGE_DELETED', (message: string) => {
+      try {
+        const parsedMessage = JSON.parse(message);
+        this.handleMessageDeleted(parsedMessage.payload);
+      } catch (error) {
+        Logger.error(`Error parsing Redis message: ${error}`);
+      }
+    });
+
     // Subscribe to other events here...
   }
 
@@ -145,6 +154,13 @@ export class SocketService {
     const { receiverId, ...data } = payload;
     if (receiverId && this.userSockets.has(receiverId)) {
       this.io.to(this.userSockets.get(receiverId)!).emit('message_reaction', data);
+    }
+  }
+
+  private handleMessageDeleted(payload: any) {
+    const { receiverId, ...data } = payload;
+    if (receiverId && this.userSockets.has(receiverId)) {
+      this.io.to(this.userSockets.get(receiverId)!).emit('message_deleted', data);
     }
   }
 

@@ -1,7 +1,10 @@
 import prisma from '@shared/components/prisma';
 import { RedisClient } from '@shared/components/redis-pubsub/redis';
 import { AppEvent } from '@shared/model/event';
-import { uploadBufferToCloudinary } from '@shared/services/cloudinary.service';
+import {
+  deleteCloudinaryAssetByUrl,
+  uploadBufferToCloudinary,
+} from '@shared/services/cloudinary.service';
 import crypto from 'crypto';
 import { Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
@@ -467,6 +470,112 @@ export class ConversationController {
       });
     } catch (error) {
       console.error('Error deleting conversation:', error);
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        error: 'Internal server error'
+      });
+    }
+  }
+
+  async deleteMessage(req: Request, res: Response) {
+    try {
+      const userId = res.locals.requester?.sub;
+      const { conversationId, messageId } = req.params;
+
+      if (!userId) {
+        return res.status(StatusCodes.UNAUTHORIZED).json({
+          error: 'Unauthorized'
+        });
+      }
+
+      const conversation = await prisma.conversation.findFirst({
+        where: {
+          id: conversationId,
+          OR: [{ senderId: userId }, { receiverId: userId }, { participants: { some: { userId } } }]
+        },
+        include: {
+          participants: true
+        }
+      });
+
+      if (!conversation) {
+        return res.status(StatusCodes.NOT_FOUND).json({
+          error: 'Conversation not found'
+        });
+      }
+
+      const message = await prisma.message.findFirst({
+        where: {
+          id: messageId,
+          conversationId
+        }
+      });
+
+      if (!message) {
+        return res.status(StatusCodes.NOT_FOUND).json({
+          error: 'Message not found'
+        });
+      }
+
+      if (message.senderId !== userId) {
+        return res.status(StatusCodes.FORBIDDEN).json({
+          error: 'You can only delete your own messages'
+        });
+      }
+
+      await prisma.$transaction([
+        prisma.messageReaction.deleteMany({
+          where: { messageId }
+        }),
+        prisma.message.delete({
+          where: { id: messageId }
+        }),
+        prisma.conversation.update({
+          where: { id: conversationId },
+          data: { updatedAt: new Date() }
+        })
+      ]);
+
+      if (message.fileUrl) {
+        await deleteCloudinaryAssetByUrl(message.fileUrl);
+      }
+
+      const redis = RedisClient.getInstance();
+      const eventPayload = {
+        conversationId,
+        messageId
+      };
+
+      if (conversation.participants && conversation.participants.length > 0) {
+        const recipients = conversation.participants.filter((p) => p.userId !== userId);
+        for (const recipient of recipients) {
+          await redis.publish(
+            new AppEvent(
+              'MESSAGE_DELETED',
+              { ...eventPayload, receiverId: recipient.userId },
+              { senderId: userId }
+            )
+          );
+        }
+      } else {
+        const receiverId =
+          conversation.senderId === userId ? conversation.receiverId : conversation.senderId;
+        if (receiverId) {
+          await redis.publish(
+            new AppEvent(
+              'MESSAGE_DELETED',
+              { ...eventPayload, receiverId },
+              { senderId: userId }
+            )
+          );
+        }
+      }
+
+      return res.status(StatusCodes.OK).json({
+        message: 'Message deleted successfully',
+        data: { id: messageId }
+      });
+    } catch (error) {
+      console.error('Error deleting message:', error);
       return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
         error: 'Internal server error'
       });

@@ -52,6 +52,14 @@ router.post('/:conversationId/messages/:messageId/reactions', async (req: Reques
   }
 });
 
+router.delete('/:conversationId/messages/:messageId', async (req: Request, res: Response, next: Function) => {
+  try {
+    await conversationController.deleteMessage(req, res);
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.delete('/:conversationId', async (req: Request, res: Response, next: Function) => {
   try {
     await conversationController.deleteConversation(req, res);
