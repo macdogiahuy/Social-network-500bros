@@ -1,6 +1,6 @@
-import { config } from '@shared/components/config';
 import { jwtProvider } from '@shared/components/jwt';
 import prisma from '@shared/components/prisma';
+import { uploadBufferToCloudinary } from '@shared/services/cloudinary.service';
 import { Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import { singleton } from 'tsyringe';
@@ -126,14 +126,16 @@ export class UserController {
         });
       }
 
-      // Get avatar URL
-      const avatarUrl = `${config.upload.cdn}/${file.filename}`;
+      const uploadedAvatar = await uploadBufferToCloudinary(file, {
+        folder: 'social-network-500bros/users/avatars',
+        resourceType: 'image'
+      });
 
       // Update user's avatar in database
       const updatedUser = await prisma.users.update({
         where: { id: sub },
         data: {
-          avatar: avatarUrl,
+          avatar: uploadedAvatar.secureUrl,
           updatedAt: new Date()
         }
       });

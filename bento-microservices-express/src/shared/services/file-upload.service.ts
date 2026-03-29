@@ -1,14 +1,4 @@
-import crypto from 'crypto';
-import fs from 'fs';
 import multer from 'multer';
-import path from 'path';
-
-const UPLOAD_DIR = path.join(__dirname, '../../../uploads');
-
-// Ensure upload directory exists
-if (!fs.existsSync(UPLOAD_DIR)) {
-  fs.mkdirSync(UPLOAD_DIR, { recursive: true });
-}
 
 // Allowed file types with proper type definition
 const ALLOWED_FILE_TYPES: Record<string, string> = {
@@ -31,16 +21,7 @@ const ALLOWED_FILE_TYPES: Record<string, string> = {
   'video/ogg': '.ogg'
 } as const;
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, UPLOAD_DIR);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = crypto.randomUUID();
-    const ext = ALLOWED_FILE_TYPES[file.mimetype] || path.extname(file.originalname);
-    cb(null, uniqueSuffix + ext);
-  }
-});
+const storage = multer.memoryStorage();
 
 const fileFilter = (req: Express.Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
   // Check if file type is allowed
@@ -72,6 +53,21 @@ export const upload = multer({
   fileFilter,
   limits: {
     fileSize: SIZE_LIMITS.archive // Maximum overall limit
+  }
+});
+
+export const uploadImageOnly = multer({
+  storage,
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+      return;
+    }
+
+    cb(new Error('Only images are allowed'));
+  },
+  limits: {
+    fileSize: SIZE_LIMITS.image
   }
 });
 
