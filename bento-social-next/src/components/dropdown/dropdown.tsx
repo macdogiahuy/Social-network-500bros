@@ -70,7 +70,7 @@ const Dropdown = ({
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
         className={cn(
-          'w-fit p-2.5 inline-flex gap-3 items-center rounded-[0.75rem] group bg-neutral2-1',
+          'w-fit p-2.5 inline-flex gap-3 items-center rounded-[0.75rem] group bg-neutral4-60 border border-neutral1-10 text-secondary hover:bg-neutral4-80 transition-colors',
           'after:content-[""] after:w-2 after:h-2',
           'after:border-r-2 after:border-b-2 after:border-secondary',
           'after:transform after:rotate-45 after:transition-transform after:duration-200',
@@ -79,17 +79,17 @@ const Dropdown = ({
           className
         )}
       >
-        <div className="text-sm text-gray-200">
+        <div className="text-sm text-secondary">
           {selectedOption ? renderOptionContent(selectedOption) : placeholder}
         </div>
       </button>
 
       {isOpen && (
         <div className="absolute top-full left-0 mt-2 w-[200px] z-[9999]">
-          <div className="bg-neutral2-1 border border-neutral2-10 rounded-lg shadow-lg">
+          <div className="bg-neutral4-95 border border-neutral1-10 rounded-lg shadow-lg">
             <div className="max-h-60 overflow-auto">
               {options.length === 0 ? (
-                <div className="px-4 py-2 text-sm text-gray-200">No topics</div>
+                <div className="px-4 py-2 text-sm text-secondary">No topics</div>
               ) : (
                 options.map((option, index) => (
                   <div
@@ -97,7 +97,7 @@ const Dropdown = ({
                     role="option"
                     aria-selected={option.value === value}
                     className={cn(
-                      'relative px-4 py-2 text-sm cursor-pointer text-gray-200',
+                      'relative px-4 py-2 text-sm cursor-pointer text-secondary',
                       'hover:bg-neutral2-10 hover:text-primary',
                       index === 0 && 'rounded-t-lg',
                       index === options.length - 1 && 'rounded-b-lg',
