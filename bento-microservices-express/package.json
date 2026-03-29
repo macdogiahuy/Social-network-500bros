@@ -7,7 +7,7 @@
     "build": "npx tsc",
     "start": "node dist/index.js",
     "dev": "dotenv -e .env.development -- nodemon",
-    "seed": "dotenv -e .env.development -- ts-node src/seed/index.ts"
+    "seed": "ts-node src/seed/index.ts"
   },
   "keywords": [],
   "author": "",

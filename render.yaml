@@ -1,11 +1,10 @@
 # Render Blueprint
-# This file can be used to deploy the backend microservices to Render automatically.
 services:
   - type: web
     name: bento-microservices
     env: node
     rootDir: bento-microservices-express
-    buildCommand: cd bento-microservices-express && pnpm install --frozen-lockfile && npx prisma generate && pnpm build
+    buildCommand: cd bento-microservices-express && pnpm install --no-frozen-lockfile --prod=false && pnpm exec prisma generate && pnpm exec prisma migrate deploy && pnpm seed && pnpm build
     startCommand: cd bento-microservices-express && pnpm start
     envVars:
       - key: NODE_ENV
@@ -29,20 +28,4 @@ services:
       - key: CLOUDINARY_FOLDER
         value: social-network-500bros
       - key: CDN_URL
-        value: https://bento-microservices.onrender.com/uploads
-      - key: VERIFY_TOKEN_URL
-        value: http://127.0.0.1:8080/v1/rpc/introspect
-      - key: POST_SERVICE_URL
-        value: http://127.0.0.1:8080/v1
-      - key: USER_SERVICE_URL
-        value: http://127.0.0.1:8080/v1
-      - key: COMMENT_SERVICE_URL
-        value: http://127.0.0.1:8080/v1
-      - key: FOLLOW_SERVICE_URL
-        value: http://127.0.0.1:8080/v1
-      - key: TOPIC_SERVICE_URL
-        value: http://127.0.0.1:8080/v1
-      - key: POST_LIKE_SERVICE_URL
-        value: http://127.0.0.1:8080/v1
-      - key: POST_SAVED_SERVICE_URL
-        value: http://127.0.0.1:8080/v1
+        value: https://five00bros-social-network.onrender.com/uploads
