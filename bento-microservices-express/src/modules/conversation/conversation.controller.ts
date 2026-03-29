@@ -1,6 +1,7 @@
 import prisma from '@shared/components/prisma';
 import { RedisClient } from '@shared/components/redis-pubsub/redis';
 import { AppEvent } from '@shared/model/event';
+import { uploadBufferToCloudinary } from '@shared/services/cloudinary.service';
 import crypto from 'crypto';
 import { Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
@@ -98,12 +99,18 @@ export class ConversationController {
       // GROUP CHAT
       if (userIds && Array.isArray(userIds) && userIds.length > 0) {
         console.log('Creating group conversation...');
+        const uploadedGroupImage = file
+          ? await uploadBufferToCloudinary(file, {
+              folder: 'social-network-500bros/conversations/groups',
+              resourceType: 'image'
+            })
+          : null;
         const conversation = await prisma.conversation.create({
           data: {
             id: crypto.randomUUID(),
             type: 'GROUP',
             name: name || 'New Group',
-            image: file ? `/uploads/${file.filename}` : null,
+            image: uploadedGroupImage?.secureUrl || null,
             participants: {
               create: [{ userId: senderId }, ...userIds.map((id: string) => ({ userId: id }))]
             }
@@ -326,6 +333,13 @@ export class ConversationController {
         });
       }
 
+      const uploadedFile = file
+        ? await uploadBufferToCloudinary(file, {
+            folder: 'social-network-500bros/conversations/messages',
+            resourceType: 'auto'
+          })
+        : null;
+
       // Create the message
       const message = await prisma.message.create({
         data: {
@@ -333,8 +347,8 @@ export class ConversationController {
           content: content?.trim(),
           conversation: { connect: { id: conversationId } },
           sender: { connect: { id: userId } },
-          ...(file && {
-            fileUrl: `/uploads/${file.filename}`,
+          ...(file && uploadedFile && {
+            fileUrl: uploadedFile.secureUrl,
             fileName: file.originalname,
             fileSize: file.size,
             fileType: file.mimetype

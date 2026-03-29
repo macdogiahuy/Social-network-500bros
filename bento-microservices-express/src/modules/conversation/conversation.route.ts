@@ -20,7 +20,7 @@ router.get('/', async (req: Request, res: Response, next: Function) => {
   }
 });
 
-router.post('/initiate', async (req: Request, res: Response, next: Function) => {
+router.post('/initiate', upload.single('file'), async (req: Request, res: Response, next: Function) => {
   try {
     await conversationController.initiateConversation(req, res);
   } catch (error) {
