@@ -16,7 +16,7 @@ export default function Heart({ isActive }: HeartProps) {
       <g opacity="0.8">
         <path
           d="M12 5.57193C18.3331 -0.86765 29.1898 11.0916 12 20.75C-5.18982 11.0916 5.66687 -0.867651 12 5.57193Z"
-          stroke={isActive ? '#bd3027e5' : '#F8F8F8'}
+          stroke={isActive ? '#bd3027e5' : 'currentColor'}
           strokeOpacity="0.5"
           strokeWidth="1.5"
           strokeLinejoin="round"

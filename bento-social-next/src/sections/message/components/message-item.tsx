@@ -3,10 +3,10 @@ import { Avatar } from '@/components/avatar';
 import { FolderIcon, HeartIcon } from '@/components/icons';
 import { Typography } from '@/components/typography';
 import { useUserProfile } from '@/context/user-context';
-import { HOST_API } from '@/global-config';
+import { HOST_API, MEDIA_HOST_API } from '@/global-config';
 import { IMessage } from '@/interfaces/conversation';
 import { formatDistanceToNow } from 'date-fns';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 //----------------------------------------------------------------------
 
@@ -22,8 +22,8 @@ export default function MessageItem({
   isOwnMessage,
 }: IMessageItemProps) {
   const { userProfile } = useUserProfile();
-  const [imageError, setImageError] = useState(false);
   const [showReactions, setShowReactions] = useState(false);
+  const [fileUrlIndex, setFileUrlIndex] = useState(0);
 
   const formattedTime = formatDistanceToNow(new Date(message.createdAt), {
     addSuffix: true,
@@ -49,16 +49,40 @@ export default function MessageItem({
 
   const myReaction = reactions.find((r) => r.userId === userProfile?.id);
 
-  const getFileUrl = (path?: string) => {
-    if (!path) return '';
-    if (path.startsWith('http')) return path;
-    const baseUrl = HOST_API?.endsWith('/')
-      ? HOST_API.slice(0, -1)
-      : HOST_API || '';
-    return `${baseUrl}${path.startsWith('/') ? path : `/${path}`}`;
-  };
+  const fileUrls = useMemo(() => {
+    const path = message.fileUrl || '';
+    if (!path) return [];
+    if (path.startsWith('http')) return [path];
 
-  const fileUrl = getFileUrl(message.fileUrl || '');
+    const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+    const baseCandidates = [
+      MEDIA_HOST_API,
+      HOST_API,
+      'https://bento-microservices.onrender.com',
+    ]
+      .filter((base): base is string => Boolean(base))
+      .map((base) => base.replace(/\/+$/, ''));
+
+    return Array.from(new Set(baseCandidates)).map(
+      (base) => `${base}${normalizedPath}`
+    );
+  }, [message.fileUrl]);
+
+  const fileUrl = fileUrls[fileUrlIndex] || '';
+
+  useEffect(() => {
+    setFileUrlIndex(0);
+  }, [message.fileUrl]);
+
+  const handleFileLoadError = () => {
+    setFileUrlIndex((currentIndex) => {
+      if (currentIndex < fileUrls.length - 1) {
+        return currentIndex + 1;
+      }
+
+      return currentIndex;
+    });
+  };
 
   const renderFileContent = () => {
     if (!message.fileUrl) return null;
@@ -73,7 +97,7 @@ export default function MessageItem({
       message.fileType?.startsWith('audio/') ||
       /\.(mp3|wav|ogg)$/i.test(message.fileName || '');
 
-    if (isImage && !imageError) {
+    if (isImage && fileUrl) {
       return (
         // eslint-disable-next-line @next/next/no-img-element
         <img
@@ -81,27 +105,30 @@ export default function MessageItem({
           alt={message.fileName || 'Image'}
           className="rounded-lg max-w-full max-h-[300px] object-cover cursor-pointer hover:opacity-90 transition-opacity mt-2 block"
           onClick={() => window.open(fileUrl, '_blank')}
-          onError={(e) => {
-            console.error('Error loading image:', fileUrl, e);
-            setImageError(true);
-          }}
+          onError={handleFileLoadError}
         />
       );
     }
 
-    if (isVideo) {
+    if (isVideo && fileUrl) {
       return (
         <video
           src={fileUrl}
           controls
           className="rounded-lg max-w-full max-h-[300px] mt-2 bg-black"
+          onError={handleFileLoadError}
         />
       );
     }
 
-    if (isAudio) {
+    if (isAudio && fileUrl) {
       return (
-        <audio src={fileUrl} controls className="w-full mt-2 min-w-[240px]" />
+        <audio
+          src={fileUrl}
+          controls
+          className="w-full mt-2 min-w-[240px]"
+          onError={handleFileLoadError}
+        />
       );
     }
 
@@ -166,8 +193,8 @@ export default function MessageItem({
         >
           <button
             onClick={() => setShowReactions(!showReactions)}
-            className={`p-1.5 rounded-full hover:bg-neutral4-5 transition-all text-tertiary opacity-0 group-hover:opacity-100 ${
-              showReactions ? 'opacity-100 bg-neutral4-5' : ''
+            className={`p-1.5 rounded-full border border-neutral1-10 bg-neutral4-80 shadow-sm hover:bg-neutral4-95 transition-all text-secondary opacity-0 group-hover:opacity-100 ${
+              showReactions ? 'opacity-100 bg-neutral4-95 text-primary' : ''
             }`}
           >
             <HeartIcon />
