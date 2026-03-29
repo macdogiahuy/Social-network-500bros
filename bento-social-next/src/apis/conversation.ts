@@ -75,6 +75,15 @@ export const reactToMessage = async (
   return response.data;
 };
 
+export const deleteMessage = async (
+  conversationId: string,
+  messageId: string
+): Promise<void> => {
+  await axiosInstance.delete(
+    `${VERSION_PREFIX}/conversations/${conversationId}/messages/${messageId}`
+  );
+};
+
 export const getConversations = async (): Promise<{
   data: IConversation[];
 }> => {
