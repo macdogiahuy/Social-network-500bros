@@ -23,7 +23,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(({
       disabled={disabled}
       type={type}
       className={cn(
-        'relative inline-flex justify-center items-center rounded-button shadow-button bg-[var(--btn-bg)] ring-1 ring-[var(--btn-border)] backdrop-blur-[50px] hover:bg-[var(--btn-hover)] hover:text-primary transition-all text-secondary',
+        'relative inline-flex justify-center items-center rounded-button shadow-button bg-[var(--btn-bg)] ring-1 ring-[var(--btn-border)] backdrop-blur-[50px] hover:bg-[var(--btn-hover)] hover:text-primary transition-all text-secondary disabled:hover:bg-[var(--btn-bg)]',
         className
       )}
     >
