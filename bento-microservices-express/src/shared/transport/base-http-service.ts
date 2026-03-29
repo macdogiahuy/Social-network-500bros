@@ -1,5 +1,6 @@
 import { IUseCase } from "@shared/interface";
 import { pagingDTOSchema } from "@shared/model";
+import { pickParam } from "@shared/utils/request";
 import { Request, Response } from "express";
 
 export abstract class BaseHttpService<Entity, CreateDTO, UpdateDTO, Cond> {
@@ -11,19 +12,19 @@ export abstract class BaseHttpService<Entity, CreateDTO, UpdateDTO, Cond> {
   }
 
   async getDetailAPI(req: Request, res: Response) {
-    const { id } = req.params;
+    const id = pickParam(req.params.id);
     const result = await this.useCase.getDetail(id);
     res.status(200).json({ data: result });
   }
 
   async updateAPI(req: Request<any, any, UpdateDTO>, res: Response) {
-    const { id } = req.params;
+    const id = pickParam(req.params.id);
     const result = await this.useCase.update(id, req.body);
     res.status(200).json({ data: result });
   }
 
   async deleteAPI(req: Request, res: Response) {
-    const { id } = req.params;
+    const id = pickParam(req.params.id);
     const result = await this.useCase.delete(id);
     res.status(200).json({ data: result });
   }

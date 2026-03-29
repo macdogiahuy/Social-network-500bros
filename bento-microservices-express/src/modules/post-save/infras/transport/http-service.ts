@@ -2,6 +2,7 @@ import { IPostSaveRepository, IPostSaveUseCase, ITopicQueryRPC } from "@modules/
 import { Topic } from "@modules/post-save/model/topic";
 import { IAuthorRpc, IPostRpc, MdlFactory, Requester } from "@shared/interface";
 import { pagingDTOSchema, Post, PublicUser } from "@shared/model";
+import { pickParam } from "@shared/utils/request";
 import Logger from "@shared/utils/logger";
 import { paginatedResponse, successResponse } from "@shared/utils/utils";
 import { log } from "console";
@@ -21,7 +22,7 @@ export class PostSaveHttpService {
     const { sub } = res.locals.requester as Requester;
 
     const dto = {
-      postId: req.params.id,
+      postId: pickParam(req.params.id),
       userId: sub
     };
 
@@ -34,7 +35,7 @@ export class PostSaveHttpService {
     const { sub } = res.locals.requester as Requester;
 
     const dto = {
-      postId: req.params.id,
+      postId: pickParam(req.params.id),
       userId: sub
     };
 
@@ -45,7 +46,7 @@ export class PostSaveHttpService {
 
   async listPostSaveAPI(req: Request, res: Response) {
     // const { sub } = res.locals.requester as Requester;
-    const userId = req.params.id;
+    const userId = pickParam(req.params.id);
     const paging = pagingDTOSchema.parse(req.query);
 
     const postUserSave = await this.repo.list(userId, paging);

@@ -5,6 +5,7 @@ import {
   deleteCloudinaryAssetByUrl,
   uploadBufferToCloudinary,
 } from '@shared/services/cloudinary.service';
+import { pickParam } from '@shared/utils/request';
 import crypto from 'crypto';
 import { Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
@@ -235,7 +236,7 @@ export class ConversationController {
   async getMessages(req: Request, res: Response) {
     try {
       const userId = res.locals.requester?.sub;
-      const { conversationId } = req.params;
+      const conversationId = pickParam(req.params.conversationId);
 
       if (!userId) {
         return res.status(StatusCodes.UNAUTHORIZED).json({
@@ -303,7 +304,7 @@ export class ConversationController {
   async sendMessage(req: Request, res: Response) {
     try {
       const userId = res.locals.requester?.sub;
-      const { conversationId } = req.params;
+      const conversationId = pickParam(req.params.conversationId);
       const { content } = req.body;
       const file = req.file;
 
@@ -380,7 +381,9 @@ export class ConversationController {
       const redis = RedisClient.getInstance();
 
       if (conversation.participants && conversation.participants.length > 0) {
-        const recipients = conversation.participants.filter((p) => p.userId !== userId);
+        const recipients = conversation.participants.filter(
+          (p: { userId: string }) => p.userId !== userId
+        );
         for (const recipient of recipients) {
           await redis.publish(
             new AppEvent(
@@ -430,7 +433,7 @@ export class ConversationController {
   async deleteConversation(req: Request, res: Response) {
     try {
       const userId = res.locals.requester?.sub;
-      const { conversationId } = req.params;
+      const conversationId = pickParam(req.params.conversationId);
 
       if (!userId) {
         return res.status(StatusCodes.UNAUTHORIZED).json({
@@ -479,7 +482,8 @@ export class ConversationController {
   async deleteMessage(req: Request, res: Response) {
     try {
       const userId = res.locals.requester?.sub;
-      const { conversationId, messageId } = req.params;
+      const conversationId = pickParam(req.params.conversationId);
+      const messageId = pickParam(req.params.messageId);
 
       if (!userId) {
         return res.status(StatusCodes.UNAUTHORIZED).json({
@@ -546,7 +550,9 @@ export class ConversationController {
       };
 
       if (conversation.participants && conversation.participants.length > 0) {
-        const recipients = conversation.participants.filter((p) => p.userId !== userId);
+        const recipients = conversation.participants.filter(
+          (p: { userId: string }) => p.userId !== userId
+        );
         for (const recipient of recipients) {
           await redis.publish(
             new AppEvent(
@@ -585,7 +591,8 @@ export class ConversationController {
   async reactToMessage(req: Request, res: Response) {
     try {
       const userId = res.locals.requester?.sub;
-      const { conversationId, messageId } = req.params;
+      const conversationId = pickParam(req.params.conversationId);
+      const messageId = pickParam(req.params.messageId);
       const { emoji } = req.body;
 
       if (!userId) {
@@ -675,7 +682,9 @@ export class ConversationController {
       };
 
       if (conversation.participants && conversation.participants.length > 0) {
-        const recipients = conversation.participants.filter((p) => p.userId !== userId);
+        const recipients = conversation.participants.filter(
+          (p: { userId: string }) => p.userId !== userId
+        );
         for (const recipient of recipients) {
           await redis.publish(
             new AppEvent('MESSAGE_REACTION', { ...eventPayload, receiverId: recipient.userId }, { senderId: userId })

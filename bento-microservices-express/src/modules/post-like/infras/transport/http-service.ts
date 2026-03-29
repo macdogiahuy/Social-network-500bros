@@ -2,6 +2,7 @@ import { IPostLikeRepository } from '@modules/post-like/interface';
 import { PostLikeUsecase } from '@modules/post-like/usecase';
 import { IAuthorRpc, MdlFactory, Requester } from '@shared/interface';
 import { pagingDTOSchema, PublicUser } from '@shared/model';
+import { pickParam } from '@shared/utils/request';
 import Logger from '@shared/utils/logger';
 import { pagingResponse, successResponse } from '@shared/utils/utils';
 import { Request, Response, Router } from 'express';
@@ -14,7 +15,7 @@ export class PostLikeHttpService {
   ) { }
 
   async likeAPI(req: Request, res: Response) {
-    const { id: postId } = req.params;
+    const postId = pickParam(req.params.id);
     const { sub } = res.locals.requester as Requester;
 
     const result = await this.usecase.like({ postId, userId: sub });
@@ -23,7 +24,7 @@ export class PostLikeHttpService {
   }
 
   async unlikeAPI(req: Request, res: Response) {
-    const { id: postId } = req.params;
+    const postId = pickParam(req.params.id);
     const { sub } = res.locals.requester as Requester;
 
     const result = await this.usecase.unlike({ postId, userId: sub });
@@ -32,7 +33,9 @@ export class PostLikeHttpService {
   }
 
   async getLikesAPI(req: Request, res: Response) {
-    const postId = req.params.postId;
+    const postId = pickParam(
+      (req.params as Record<string, string | string[] | undefined>).postId ?? req.params.id
+    );
     const paging = pagingDTOSchema.parse(req.query);
 
     const result = await this.repo.list(postId, paging);
