@@ -111,7 +111,7 @@ export default function MessageItem({
         download={message.fileName}
         target="_blank"
         rel="noreferrer"
-        className="flex items-center gap-3 p-3 mt-2 bg-white/50 rounded-lg hover:bg-white/80 transition-colors group/file text-left max-w-full overflow-hidden"
+        className="flex items-center gap-3 p-3 mt-2 bg-neutral4-60 hover:bg-neutral4-80 border border-neutral1-10 rounded-lg transition-colors group/file text-left max-w-full overflow-hidden"
       >
         <div className="p-2 bg-primary/10 rounded-full text-primary shrink-0">
           <FolderIcon />
@@ -175,7 +175,7 @@ export default function MessageItem({
 
           {showReactions && (
             <div
-              className={`absolute bottom-full mb-2 bg-white dark:bg-neutral-800 shadow-lg rounded-full p-1 flex items-center gap-1 border border-neutral-200 dark:border-neutral-700 animate-in fade-in zoom-in duration-200 ${
+              className={`absolute bottom-full mb-2 bg-neutral4-95 shadow-lg rounded-full p-1 flex items-center gap-1 border border-neutral1-10 animate-in fade-in zoom-in duration-200 ${
                 isOwnMessage
                   ? 'right-0 origin-bottom-right'
                   : 'left-0 origin-bottom-left'
@@ -222,7 +222,7 @@ export default function MessageItem({
         {/* Reactions Display */}
         {Object.keys(groupedReactions).length > 0 && (
           <div
-            className="absolute -bottom-3 right-0 translate-y-1/2 bg-white dark:bg-neutral-800 shadow-sm rounded-full px-1.5 py-0.5 flex items-center gap-1 border border-neutral-200 dark:border-neutral-700 select-none cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors"
+            className="absolute -bottom-3 right-0 translate-y-1/2 bg-neutral4-95 shadow-sm rounded-full px-1.5 py-0.5 flex items-center gap-1 border border-neutral1-10 select-none cursor-pointer hover:bg-neutral4-80 transition-colors"
             onClick={() => setShowReactions(!showReactions)}
           >
             {Object.entries(groupedReactions).map(([emoji, count]) => (
