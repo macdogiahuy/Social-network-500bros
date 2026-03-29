@@ -3,6 +3,7 @@ import { TopicUsecase } from '@modules/topic/usecase';
 import { MdlFactory } from '@shared/interface';
 import { pagingDTOSchema } from '@shared/model';
 import { ErrNotFound } from '@shared/utils/error';
+import { pickParam } from '@shared/utils/request';
 import { paginatedResponse, successResponse } from '@shared/utils/utils';
 import { NextFunction, Request, Response, Router } from 'express';
 
@@ -18,13 +19,13 @@ export class TopicHttpService {
   }
 
   async updateTopicAPI(req: any, res: any) {
-    const { id } = req.params;
+    const id = pickParam(req.params.id);
     const data = await this.usecase.update(id, req.body);
     successResponse(data, res);
   }
 
   async deleteTopicAPI(req: any, res: any) {
-    const { id } = req.params;
+    const id = pickParam(req.params.id);
     const data = await this.usecase.delete(id);
     successResponse(data, res);
   }
@@ -55,7 +56,7 @@ export class TopicHttpService {
   }
 
   async getByIdAPI(req: Request, res: Response, next: NextFunction) {
-    const { id } = req.params;
+    const id = pickParam(req.params.id);
     const data = await this.topicRepo.findByIds([id]);
 
     if (data.length === 0) {

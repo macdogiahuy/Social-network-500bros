@@ -4,6 +4,7 @@ import { jwtProvider } from '@shared/components/jwt';
 import { Requester } from '@shared/interface';
 import { BaseHttpService } from '@shared/transport/base-http-service';
 import { AppError, ErrNotFound } from '@shared/utils/error';
+import { pickParam } from '@shared/utils/request';
 import { successResponse } from '@shared/utils/utils';
 import { NextFunction, Request, Response } from 'express';
 
@@ -67,7 +68,7 @@ export class UserHTTPService extends BaseHttpService<User, UserRegistrationDTO, 
   }
 
   async getDetailAPI(req: Request, res: Response) {
-    const { id } = req.params;
+    const id = pickParam(req.params.id);
     const result = await this.usecase.getDetail(id);
 
     if (!result) {
@@ -80,7 +81,7 @@ export class UserHTTPService extends BaseHttpService<User, UserRegistrationDTO, 
 
   // RPC API
   async getByIdAPI(req: Request, res: Response, next: NextFunction) {
-    const { id } = req.params;
+    const id = pickParam(req.params.id);
     const data = await this.usecase.listByIds([id]);
 
     if (data.length === 0) {

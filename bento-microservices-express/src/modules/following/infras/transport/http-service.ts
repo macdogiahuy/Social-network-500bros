@@ -1,6 +1,7 @@
 import { FollowingUsecase } from '@modules/following/usecase';
 import { MdlFactory, Requester } from '@shared/interface';
 import { pagingDTOSchema } from '@shared/model';
+import { pickParam } from '@shared/utils/request';
 import { paginatedResponse, successResponse } from '@shared/utils/utils';
 import { Request, Response, Router } from 'express';
 
@@ -9,7 +10,7 @@ export class FollowingHttpService {
 
   async hasFollowedAPI(req: Request, res: Response) {
     const { sub } = res.locals.requester as Requester;
-    const { id: followingId } = req.params;
+    const followingId = pickParam(req.params.id);
     const result = await this.usecase.hasFollowed(sub, followingId);
     successResponse(result, res);
   }
@@ -19,7 +20,7 @@ export class FollowingHttpService {
 
     const dto = {
       followerId: sub,
-      followingId: req.params.id
+      followingId: pickParam(req.params.id)
     };
     const result = await this.usecase.follow(dto);
 
@@ -31,7 +32,7 @@ export class FollowingHttpService {
 
     const dto = {
       followerId: sub,
-      followingId: req.params.id
+      followingId: pickParam(req.params.id)
     };
 
     const result = await this.usecase.unfollow(dto);
@@ -40,7 +41,7 @@ export class FollowingHttpService {
   }
 
   async listFollowersAPI(req: Request, res: Response) {
-    const { id: followingId } = req.params;
+    const followingId = pickParam(req.params.id);
 
     const paging = pagingDTOSchema.parse(req.query);
 
@@ -50,7 +51,7 @@ export class FollowingHttpService {
   }
 
   async listFollowingsAPI(req: Request, res: Response) {
-    const { id: followerId } = req.params;
+    const followerId = pickParam(req.params.id);
 
     const paging = pagingDTOSchema.parse(req.query);
 

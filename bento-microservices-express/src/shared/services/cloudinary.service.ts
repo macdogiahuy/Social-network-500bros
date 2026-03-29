@@ -61,7 +61,7 @@ export async function uploadBufferToCloudinary(
   };
 
   const uploaded = await new Promise<UploadApiResponse>((resolve, reject) => {
-    const stream = cloudinary.uploader.upload_stream(uploadOptions, (error, result) => {
+    const stream = cloudinary.uploader.upload_stream(uploadOptions, (error: unknown, result?: UploadApiResponse) => {
       if (error || !result) {
         reject(error || new Error('Cloudinary upload failed'));
         return;

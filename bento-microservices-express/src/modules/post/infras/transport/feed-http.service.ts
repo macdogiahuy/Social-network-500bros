@@ -1,4 +1,5 @@
 import { pagingDTOSchema } from '@shared/model';
+import { pickParam } from '@shared/utils/request';
 import { paginatedResponse } from '@shared/utils/utils';
 import { Request, Response } from 'express';
 import { IFeedUsecase } from '../../usecase/feed.usecase';
@@ -13,7 +14,9 @@ export class FeedHttpService {
   }
 
   async getLatestPostsByTopicAPI(req: Request, res: Response) {
-    const { topicId } = req.params;
+    const topicId = pickParam(
+      (req.params as Record<string, string | string[] | undefined>).topicId
+    );
     const paging = pagingDTOSchema.parse(req.query);
     const posts = await this.usecase.getLatestPostsByTopic(topicId, paging);
     paginatedResponse(posts, {}, res);

@@ -2,6 +2,7 @@ import { IRepository } from "@modules/comment-like/interface";
 import { CommentLikeUseCase } from "@modules/comment-like/usecase";
 import { IAuthorRpc, MdlFactory, Requester } from "@shared/interface";
 import { pagingDTOSchema, PublicUser } from "@shared/model";
+import { pickParam } from "@shared/utils/request";
 import { paginatedResponse, successResponse } from "@shared/utils/utils";
 import { Request, Response, Router } from "express";
 
@@ -16,7 +17,7 @@ export class CommentLikeHttpService {
     const { sub } = res.locals.requester as Requester;
 
     const dto = {
-      commentId: req.params.id,
+      commentId: pickParam(req.params.id),
       userId: sub
     };
 
@@ -29,7 +30,7 @@ export class CommentLikeHttpService {
     const { sub } = res.locals.requester as Requester;
 
     const dto = {
-      commentId: req.params.id,
+      commentId: pickParam(req.params.id),
       userId: sub
     };
 
@@ -39,7 +40,7 @@ export class CommentLikeHttpService {
   }
 
   async listUsersAPI(req: Request, res: Response) {
-    const { id: commentId } = req.params;
+    const commentId = pickParam(req.params.id);
     const paging = pagingDTOSchema.parse(req.query);
 
     const result = await this.repo.list(commentId, paging);
