@@ -187,40 +187,56 @@ If using Prisma 7+ with the adapter pattern (as seen in your past conversations)
 
 ---
 
-## Database Schema Diagram
+## Database Schema Diagrams (Modular)
 
-Below is the Entity-Relationship (ER) diagram representing the updated schema, reflecting the fixed relations and junction tables.
+Because a single diagram with all relations can be difficult to read, the schema is broken down into separate modular diagrams by feature context.
 
+### 1. Users, Social & Notifications
+```mermaid
+erDiagram
+    Users ||--o{ Follow : "follows/followed by"
+    Users ||--o{ Notifications : "receives/sends"
+```
+
+### 2. Posts & Content
 ```mermaid
 erDiagram
     Users ||--o{ Posts : "creates"
-    Users ||--o{ Comments : "writes"
-    Users ||--o{ Follow : "follows/followed by"
-    Users ||--o{ Notifications : "receives/sends"
-    Users ||--o{ ChatRoomParticipants : "joins"
-    Users ||--o{ ChatMessages : "sends"
-    Users ||--o{ ChatRooms : "created"
-    Users ||--o{ PostLikes : "likes"
-    Users ||--o{ PostSaves : "saves"
-    Users ||--o{ CommentLikes : "likes"
-    Users ||--o{ Stories : "publishes"
-    Users ||--o{ StoryLikes : "likes"
-    Users ||--o{ StoryViews : "views"
-
-    Posts ||--o{ Comments : "contains"
-    Posts ||--o{ PostLikes : "has"
-    Posts ||--o{ PostSaves : "has"
-    Posts ||--o{ PostTags : "tagged with"
     Topics ||--o{ Posts : "categorizes"
-
+    Posts ||--o{ PostTags : "tagged with"
     Tags ||--o{ PostTags : "applied to"
+    Posts ||--o{ PostLikes : "receives"
+    Posts ||--o{ PostSaves : "receives"
+    Users ||--o{ PostLikes : "gives"
+    Users ||--o{ PostSaves : "gives"
+```
 
+### 3. Comments & Engagement
+```mermaid
+erDiagram
+    Users ||--o{ Comments : "writes"
+    Posts ||--o{ Comments : "contains"
     Comments ||--o{ Comments : "has replies (self-relation)"
     Comments ||--o{ CommentLikes : "receives"
+    Users ||--o{ CommentLikes : "gives"
+```
 
+### 4. Chat System
+```mermaid
+erDiagram
+    Users ||--o{ ChatRooms : "created"
+    Users ||--o{ ChatMessages : "sends"
+    Users ||--o{ ChatRoomParticipants : "joins"
     ChatRooms ||--o{ ChatRoomParticipants : "has members"
     ChatRooms ||--o{ ChatMessages : "contains"
+```
 
+### 5. Stories (Ephemeral Content)
+```mermaid
+erDiagram
+    Users ||--o{ Stories : "publishes"
     Stories ||--o{ StoryLikes : "receives"
     Stories ||--o{ StoryViews : "receives"
+    Users ||--o{ StoryLikes : "likes"
+    Users ||--o{ StoryViews : "views"
 ```
