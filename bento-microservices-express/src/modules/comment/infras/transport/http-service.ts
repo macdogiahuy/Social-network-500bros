@@ -2,6 +2,7 @@ import { CommentCondDTO, commentCondDTOSchema, CommentUpdateDTO } from '@modules
 import { ICommentUseCase } from '@modules/comment/model/interface';
 import { MdlFactory, Requester } from '@shared/interface';
 import { pagingDTOSchema } from '@shared/model';
+import { pickParam } from '@shared/utils/request';
 import { paginatedResponse, successResponse } from '@shared/utils/utils';
 import { Request, Response, Router } from 'express';
 
@@ -9,9 +10,10 @@ export class CommentHttpService {
   constructor(private readonly useCase: ICommentUseCase) {}
 
   async listCommentAPI(req: Request, res: Response) {
+    const id = pickParam(req.params.id);
     const dto: CommentCondDTO = {
-      postId: req.params.id,
-      parentId: req.path.includes('/replies') ? req.params.id : undefined,
+      postId: id,
+      parentId: req.path.includes('/replies') ? id : undefined,
       ...req.query
     };
 
@@ -23,7 +25,7 @@ export class CommentHttpService {
   }
 
   async createCommentAPI(req: Request, res: Response) {
-    const { id } = req.params;
+    const id = pickParam(req.params.id);
 
     const requester = res.locals.requester as Requester;
 
@@ -34,7 +36,7 @@ export class CommentHttpService {
   }
 
   async updateCommentAPI(req: Request, res: Response) {
-    const { id } = req.params;
+    const id = pickParam(req.params.id);
     const { content } = req.body;
 
     const requester = res.locals.requester as Requester;
@@ -47,7 +49,7 @@ export class CommentHttpService {
   }
 
   async deleteCommentAPI(req: Request, res: Response) {
-    const { id } = req.params;
+    const id = pickParam(req.params.id);
 
     const requester = res.locals.requester as Requester;
 
@@ -63,7 +65,7 @@ export class CommentHttpService {
     router.get('/comments/:id/replies', this.listCommentAPI.bind(this));
     router.post('/posts/:id/comments', mdlFactory.auth, this.createCommentAPI.bind(this));
     router.post('/comments/:id/replies', mdlFactory.auth, async (req: Request, res: Response) => {
-      const parentId = req.params.id;
+      const parentId = pickParam(req.params.id);
       const comment = await this.useCase.findById(parentId);
       const requester = res.locals.requester as Requester;
       const dto = { ...req.body, userId: requester.sub, postId: comment.postId, parentId };

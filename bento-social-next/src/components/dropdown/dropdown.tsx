@@ -70,12 +70,13 @@ const Dropdown = ({
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
         className={cn(
-          'w-fit p-2.5 inline-flex gap-3 items-center rounded-[0.75rem] group bg-neutral2-1',
+          'w-fit p-2.5 inline-flex gap-3 items-center rounded-[0.75rem] group bg-neutral2-1 ml-4',
           'after:content-[""] after:w-2 after:h-2',
           'after:border-r-2 after:border-b-2 after:border-secondary',
           'after:transform after:rotate-45 after:transition-transform after:duration-200',
           disabled && 'opacity-50 cursor-not-allowed',
           isOpen && 'after:rotate-[225deg] after:translate-y-1',
+
           className
         )}
       >
@@ -85,30 +86,29 @@ const Dropdown = ({
       </button>
 
       {isOpen && (
-        <div className="absolute top-full left-0 mt-2 w-[200px] z-[9999]">
-          <div className="bg-neutral2-1 border border-neutral2-10 rounded-lg shadow-lg">
+        <div
+          className="absolute z-50 w-fit mt-2 overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="relative backdrop-blur-[50px] rounded-lg">
             <div className="max-h-60 overflow-auto">
-              {options.length === 0 ? (
-                <div className="px-4 py-2 text-sm text-gray-200">No topics</div>
-              ) : (
-                options.map((option, index) => (
-                  <div
-                    key={option.value}
-                    role="option"
-                    aria-selected={option.value === value}
-                    className={cn(
-                      'relative px-4 py-2 text-sm cursor-pointer text-gray-200',
-                      'hover:bg-neutral2-10 hover:text-primary',
-                      index === 0 && 'rounded-t-lg',
-                      index === options.length - 1 && 'rounded-b-lg',
-                      option.value === value && 'bg-neutral2-10 text-primary'
-                    )}
-                    onClick={() => handleOptionClick(option.value)}
-                  >
-                    {renderOptionContent(option)}
-                  </div>
-                ))
-              )}
+              {options.map((option, index) => (
+                <div
+                  key={option.value}
+                  role="option"
+                  aria-selected={option.value === value}
+                  className={cn(
+                    'relative px-4 py-2 text-sm cursor-pointer',
+                    'bg-neutral2-1 hover:bg-neutral2-10 hover:text-primary text-primary',
+                    index === 0 && 'rounded-t-lg',
+                    index === options.length - 1 && 'rounded-b-lg',
+                    option.value === value && 'bg-neutral2-10 text-primary'
+                  )}
+                  onClick={() => handleOptionClick(option.value)}
+                >
+                  {renderOptionContent(option)}
+                </div>
+              ))}
             </div>
           </div>
         </div>

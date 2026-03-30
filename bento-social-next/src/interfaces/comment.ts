@@ -2,23 +2,29 @@ import { IUserSimple } from './user';
 
 export interface ICommment {
   id: string;
+  userId: string;
+  postId: string;
+  parentId: string | null;
   content: string;
-  author: IUserSimple;
-  createdAt: string;
   likedCount: number;
-  hasLiked: boolean;
-  replyCount: number;
-  replies?: IChildComment[];
+  replyCount?: number;
+  createdAt: string;
+  updatedAt: string;
+  author: IUserSimple;
+  user: IUserSimple;
+  children: IChilrenComment[];
 }
 
-export interface IChildComment {
+
+export interface IChilrenComment {
   id: string;
+  userId: string;
+  postId: string;
+  parentId: string | null;
   content: string;
-  author: IUserSimple;
-  createdAt: string;
-  parentId: string;
   likedCount: number;
-  hasLiked: boolean;
+  createdAt: string;
+  updatedAt: string;
+  author: IUserSimple;
+  user: IUserSimple;
 }
-
-export type IChilrenComment = IChildComment;

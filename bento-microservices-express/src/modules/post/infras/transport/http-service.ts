@@ -3,6 +3,7 @@ import { Post, postCondDTOSchema } from "@modules/post/model";
 import { IAuthorRpc, MdlFactory, Requester } from "@shared/interface";
 import { pagingDTOSchema, PublicUser, Topic } from "@shared/model";
 import { ErrNotFound } from "@shared/utils/error";
+import { pickParam } from "@shared/utils/request";
 import { paginatedResponse, successResponse } from "@shared/utils/utils";
 import { NextFunction, Request, Response, Router } from "express";
 
@@ -78,7 +79,7 @@ export class PostHttpService {
   }
 
   async getPostAPI(req: Request, res: Response, next: NextFunction) {
-    const { id } = req.params;
+    const id = pickParam(req.params.id);
     const result = await this.repo.get(id);
 
     if (!result) {
@@ -107,7 +108,7 @@ export class PostHttpService {
 
   async updatePostAPI(req: Request, res: Response) {
     const requester = res.locals.requester as Requester;
-    const { id } = req.params;
+    const id = pickParam(req.params.id);
 
     const result = await this.useCase.update(id, req.body, requester);
 
@@ -116,7 +117,7 @@ export class PostHttpService {
 
   async deletePostAPI(req: Request, res: Response) {
     const requester = res.locals.requester as Requester;
-    const { id } = req.params;
+    const id = pickParam(req.params.id);
 
     const result = await this.useCase.delete(id, requester);
 
@@ -133,7 +134,7 @@ export class PostHttpService {
   }
 
   async getByIdAPI(req: Request, res: Response, next: NextFunction) {
-    const { id } = req.params;
+    const id = pickParam(req.params.id);
     const data = await this.repo.listByIds([id]);
 
     if (data.length === 0) {

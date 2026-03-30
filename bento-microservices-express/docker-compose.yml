@@ -3,33 +3,22 @@ version: '3'
 
 services:
   mysql:
-    build:
-      context: ./mysql
-      dockerfile: Dockerfile
+    image: mysql:8.0
     container_name: mysql-bento
-    restart: unless-stopped
+    restart: always
     ports:
       - '${MYSQL_PORT:-3306}:3306'
     env_file:
       - .env # reads MYSQL_ROOT_PASSWORD, MYSQL_DATABASE from one place
     volumes:
       - social_mysql:/var/lib/mysql
-      - ./docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
     networks:
       - social
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-          cpus: '0.5'
-        reservations:
-          memory: 256M
-          cpus: '0.25'
     healthcheck:
       test: [ "CMD-SHELL", "mysqladmin ping -h localhost -u root -p${MYSQL_ROOT_PASSWORD} --silent" ]
       interval: 30s
-      timeout: 10s
-      retries: 5
+      timeout: 20s
+      retries: 10
       start_period: 30s
     stop_grace_period: 30s
     ulimits:
@@ -42,7 +31,7 @@ services:
   redis:
     image: redis:6.0
     container_name: redis
-    restart: unless-stopped
+    restart: always
     ports:
       - '${REDIS_PORT:-6379}:6379'
     volumes:
@@ -72,10 +61,8 @@ services:
 
 networks:
   social:
-    driver: bridge
+
 
 volumes:
   social_mysql:
-    driver: local
   redis-bento:
-    driver: local

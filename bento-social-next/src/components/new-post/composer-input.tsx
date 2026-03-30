@@ -63,9 +63,7 @@ export default function ComposerInput({
     getTopics()
       .then((response) => {
         setTopics(response.data);
-        if (response.data.length > 0) {
-          setSelectedTopic(response.data[0].id);
-        }
+        setSelectedTopic(response.data[0].id);
       })
       .catch((error) => {
         console.error('Error fetching topics:', error);
@@ -80,21 +78,10 @@ export default function ComposerInput({
     try {
       setIsSubmitting(true);
 
-      if (!selectedTopic) {
-        throw new Error('Please select a topic');
-      }
-
-      const selectedTopicData = topics.find(
-        (topic) => topic.id === selectedTopic
-      );
-      if (!selectedTopicData) {
-        throw new Error('Invalid topic selected');
-      }
-
       const postData: CreatePost = {
         content: content.trim(),
         image: uploadedImage || null,
-        topicId: selectedTopicData.id,
+        topicId: selectedTopic,
       };
 
       const validatedData = createPostSchema.parse(postData);
@@ -142,8 +129,11 @@ export default function ComposerInput({
           content: validatedData.content,
         };
 
-        await createComment(commentData.id, validatedData.content);
+        await createComment(
+          parentComment?.id ? commentData : { ...commentData, parentId: null }
+        );
         onCreated?.(true);
+        return;
       }
 
       addPost(newPost);
@@ -194,7 +184,7 @@ export default function ComposerInput({
   return (
     <div
       className={cn(
-        `w-full flex gap-3 h-[64px] z-10 items-center justify-between p-3 absolute left-0 bottom-0 rounded-[1.25rem] ${isInputFocused ? ' h-fit flex-col justify-start bg-neutral3-70 hover:bg-neutral2-5' : 'flex-row bg-neutral2-2'} transition-all duration-[0.2s]`,
+        `w-full flex gap-3 h-[64px] z-10 overflow-hidden items-center justify-between p-3 absolute left-0 bottom-0 rounded-[1.25rem] ${isInputFocused ? ' h-fit flex-col justify-start bg-neutral3-70 hover:bg-neutral2-5' : 'flex-row bg-neutral2-2'} transition-all duration-[0.2s]`,
         className
       )}
     >
@@ -253,6 +243,8 @@ export default function ComposerInput({
       >
         {isInputFocused && usedBy === 'post' ? (
           <div id="tool-reply" className="flex gap-1 items-center mt-3">
+            {/* <EmojiButton /> */}
+
             <UploadImgButton
               fileInputRef={fileInputRef}
               setPreviewUrl={setPreviewUrl}
@@ -260,18 +252,18 @@ export default function ComposerInput({
               setIsUploading={setIsUploading}
             />
 
-            <div className="relative">
-              <Dropdown
-                options={topics.map((topic) => ({
-                  label: topic.name,
-                  value: topic.id,
-                  color: topic.color,
-                }))}
-                value={selectedTopic}
-                onChange={setSelectedTopic}
-                placeholder="Select an topic"
-              />
-            </div>
+            {/* <GifButton /> */}
+
+            <Dropdown
+              options={topics.map((topic) => ({
+                label: topic.name,
+                value: topic.id,
+                color: topic.color,
+              }))}
+              value={selectedTopic}
+              onChange={setSelectedTopic}
+              placeholder="Select an topic"
+            />
           </div>
         ) : (
           ''

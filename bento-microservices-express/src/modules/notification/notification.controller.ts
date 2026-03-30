@@ -1,4 +1,5 @@
 import prisma from '@shared/components/prisma';
+import { pickParam } from '@shared/utils/request';
 import { Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import { singleton } from 'tsyringe';
@@ -39,7 +40,7 @@ export class NotificationController {
 
   async markAsRead(req: Request, res: Response) {
     try {
-      const { id } = req.params;
+      const id = pickParam(req.params.id);
       const userId = res.locals.requester?.id;
 
       if (!userId) {

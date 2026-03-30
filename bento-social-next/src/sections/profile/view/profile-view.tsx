@@ -4,7 +4,7 @@ import React from 'react';
 import { getPosts } from '@/apis/post';
 import { useUserProfile } from '@/context/user-context';
 import { IPost } from '@/interfaces/post';
-import { SplashScreen } from '@/components/loading-screen';
+import { IUserProfile } from '@/interfaces/user';
 
 import ToggleGroup from '@/components/toggle-group/toggle-group';
 import ActivityFeed from '@/components/user-activity-feed/user-activity-feed';
@@ -15,13 +15,13 @@ import UserInfo from '../profile-components/user-info';
 //--------------------------------------------------------------------------------------------------------
 
 export default function ProfileView() {
-  const { userProfile, loading: isProfileLoading, error: profileError } = useUserProfile();
+  const { userProfile } = useUserProfile();
   const [posts, setPosts] = React.useState<IPost[]>([]);
   const [postMedia, setPostMedia] = React.useState<IPost[]>([]);
   const [loading, setLoading] = React.useState<boolean>(true);
   const [error, setError] = React.useState<string | null>(null);
   const [params, setParams] = React.useState<Record<string, string | boolean>>({
-    userId: '',
+    userId: userProfile?.id as string,
   });
   const [contentType, setContentType] = React.useState<'post' | 'media'>(
     'post'
@@ -29,15 +29,10 @@ export default function ProfileView() {
   const [isDeleted, setIsDeleted] = React.useState<boolean>(false);
 
   React.useEffect(() => {
-    if (!userProfile?.id) {
-      setLoading(false);
-      return;
-    }
-
     const fetchPosts = async () => {
       setLoading(true);
       try {
-        const data = await getPosts({ ...params, userId: userProfile.id });
+        const data = await getPosts({ ...params, userId: userProfile?.id });
         setPosts(data.data);
         setPostMedia(data.data.filter((post) => post.type === 'media'));
       } catch (error) {
@@ -49,16 +44,6 @@ export default function ProfileView() {
     };
     fetchPosts();
   }, [params, userProfile, isDeleted]);
-
-  if (isProfileLoading) return <SplashScreen />;
-
-  if (!userProfile || profileError) {
-    return (
-      <section className="relative w-full h-fit min-h-svh overflow-hidden p-6 text-tertiary">
-        Failed to load profile.
-      </section>
-    );
-  }
 
   const handleToggle = (key: string) => {
     switch (key) {
@@ -82,7 +67,7 @@ export default function ProfileView() {
   return (
     <section className="relative w-full h-fit min-h-svh overflow-hidden">
       <ProfileHead />
-      <UserInfo user={userProfile} />
+      <UserInfo user={userProfile as IUserProfile} />
       <ToggleGroup
         items={[
           { key: 'posts', label: 'Posts' },

@@ -1,0 +1,131 @@
+import { config } from '@shared/components/config';
+import { AppError, ErrInvalidRequest } from '@shared/utils/error';
+import { v2 as cloudinary, UploadApiOptions, UploadApiResponse } from 'cloudinary';
+
+let isConfigured = false;
+
+function ensureCloudinaryConfigured() {
+  if (isConfigured) return;
+
+  const { cloudName, apiKey, apiSecret } = config.cloudinary;
+  if (!cloudName || !apiKey || !apiSecret) {
+    throw AppError.from(
+      new Error(
+        'Cloudinary is not configured. Please set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET.'
+      ),
+      500
+    );
+  }
+
+  cloudinary.config({
+    cloud_name: cloudName,
+    api_key: apiKey,
+    api_secret: apiSecret,
+    secure: true
+  });
+
+  isConfigured = true;
+}
+
+export type CloudinaryUploadResult = {
+  secureUrl: string;
+  publicId: string;
+  resourceType: string;
+  bytes: number;
+  format?: string;
+  originalFilename?: string;
+};
+
+export async function uploadBufferToCloudinary(
+  file: Express.Multer.File,
+  options?: {
+    folder?: string;
+    resourceType?: UploadApiOptions['resource_type'];
+    publicId?: string;
+  }
+): Promise<CloudinaryUploadResult> {
+  ensureCloudinaryConfigured();
+
+  if (!file?.buffer) {
+    throw ErrInvalidRequest.withMessage('No upload buffer found');
+  }
+
+  const folder =
+    options?.folder ||
+    `${config.cloudinary.baseFolder}/${resolveDefaultFolder(file.mimetype)}`;
+
+  const uploadOptions: UploadApiOptions = {
+    folder,
+    resource_type: options?.resourceType || 'auto',
+    public_id: options?.publicId
+  };
+
+  const uploaded = await new Promise<UploadApiResponse>((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(uploadOptions, (error: unknown, result?: UploadApiResponse) => {
+      if (error || !result) {
+        reject(error || new Error('Cloudinary upload failed'));
+        return;
+      }
+
+      resolve(result);
+    });
+
+    stream.end(file.buffer);
+  });
+
+  return {
+    secureUrl: uploaded.secure_url,
+    publicId: uploaded.public_id,
+    resourceType: uploaded.resource_type,
+    bytes: uploaded.bytes,
+    format: uploaded.format,
+    originalFilename: uploaded.original_filename
+  };
+}
+
+function resolveDefaultFolder(mimeType?: string) {
+  if (!mimeType) return 'files';
+  if (mimeType.startsWith('image/')) return 'images';
+  if (mimeType.startsWith('video/')) return 'videos';
+  if (mimeType.startsWith('audio/')) return 'audio';
+  return 'files';
+}
+
+export async function deleteCloudinaryAssetByUrl(fileUrl?: string | null) {
+  if (!fileUrl || !fileUrl.includes('res.cloudinary.com')) return false;
+
+  ensureCloudinaryConfigured();
+
+  try {
+    const url = new URL(fileUrl);
+    const pathParts = url.pathname.split('/').filter(Boolean);
+    const uploadIndex = pathParts.findIndex((part) => part === 'upload');
+
+    if (uploadIndex === -1 || uploadIndex < 1) {
+      return false;
+    }
+
+    const resourceType = pathParts[uploadIndex - 1] as 'image' | 'video' | 'raw';
+    const versionIndex =
+      uploadIndex + 1 < pathParts.length && /^v\d+$/.test(pathParts[uploadIndex + 1])
+        ? uploadIndex + 1
+        : uploadIndex;
+    const publicIdParts = pathParts.slice(versionIndex + 1);
+
+    if (publicIdParts.length === 0) {
+      return false;
+    }
+
+    const lastPart = publicIdParts[publicIdParts.length - 1];
+    publicIdParts[publicIdParts.length - 1] = lastPart.replace(/\.[^.]+$/, '');
+    const publicId = publicIdParts.join('/');
+
+    await cloudinary.uploader.destroy(publicId, {
+      resource_type: resourceType || 'image'
+    });
+
+    return true;
+  } catch {
+    return false;
+  }
+}

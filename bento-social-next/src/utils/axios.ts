@@ -1,25 +1,13 @@
 'use client';
 
 import axios, { AxiosRequestConfig } from 'axios';
+import { useRouter } from 'next/navigation';
 
 import { HOST_API } from '../global-config';
 
 //----------------------------------------------------------------------
 
-const axiosInstance = axios.create({
-  baseURL: HOST_API,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
-// Set default Authorization header if token exists
-if (typeof window !== 'undefined') {
-  const token = sessionStorage.getItem('token');
-  if (token) {
-    axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-  }
-}
+const axiosInstance = axios.create({ baseURL: HOST_API });
 
 axiosInstance.interceptors.request.use(
   (config) => {
@@ -34,62 +22,16 @@ axiosInstance.interceptors.request.use(
 
 axiosInstance.interceptors.response.use(
   (res) => res,
-  async (error) => {
-    const originalRequest = error.config;
-
-    // Don't retry if we've already tried once or if it's the introspect endpoint
-    if (
-      error.response?.status === 401 &&
-      !originalRequest._retry &&
-      !originalRequest.url?.includes('/rpc/introspect')
-    ) {
-      originalRequest._retry = true;
-
-      try {
-        const token = sessionStorage.getItem('token');
-        if (!token) {
-          throw new Error('No token available');
-        }
-
-        // Try to validate the token
-        const response = await axios.post(
-          `${HOST_API}${endpoints.auth.refresh}`,
-          { token }
-        );
-
-        // Check if token is still valid
-        if (response.data?.data?.sub && response.data.data?.role) {
-          // Token is still valid, retry the original request
-          originalRequest.headers['Authorization'] = `Bearer ${token}`;
-          return axiosInstance(originalRequest);
-        } else {
-          console.error(
-            'Token validation failed - invalid response format:',
-            response.data
-          );
-          // Token is invalid, clear it and redirect to login
-          sessionStorage.removeItem('token');
-          sessionStorage.removeItem('refreshToken');
-          if (typeof window !== 'undefined') {
-            window.location.href = '/login';
-          }
-          throw new Error('Token validation failed - invalid response format');
-        }
-      } catch (refreshError) {
-        console.error('Token refresh failed:', refreshError);
-
-        // Clear tokens and redirect to login for all 401s
-        sessionStorage.removeItem('token');
-        sessionStorage.removeItem('refreshToken');
-        if (typeof window !== 'undefined') {
-          window.location.href = '/login';
-        }
-
-        return Promise.reject(refreshError);
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      if (typeof window !== 'undefined') {
+        const router = useRouter();
+        router.push('/login');
       }
     }
-
-    return Promise.reject(error);
+    return Promise.reject(
+      (error.response && error.response.data) || 'Something went wrong'
+    );
   }
 );
 
@@ -112,7 +54,6 @@ export const endpoints = {
   auth: {
     login: `${VERSION_PREFIX}/authenticate`,
     register: `${VERSION_PREFIX}/register`,
-    refresh: `${VERSION_PREFIX}/rpc/introspect`,
   },
 
   user: {
@@ -127,13 +68,6 @@ export const endpoints = {
     unfollow: (id: string) => `${VERSION_PREFIX}/users/${id}/unfollow`,
     profileById: (id: string) => `${VERSION_PREFIX}/users/${id}`,
     hasFollowed: (id: string) => `${VERSION_PREFIX}/users/${id}/has-followed`,
-  },
-
-  conversation: {
-    initiate: `${VERSION_PREFIX}/conversations/initiate`,
-    messages: (conversationId: string) =>
-      `${VERSION_PREFIX}/conversations/${conversationId}/messages`,
-    list: `${VERSION_PREFIX}/conversations`,
   },
 
   post: {
@@ -164,17 +98,6 @@ export const endpoints = {
   },
 
   comment: {
-    getComments: (postId: string) =>
-      `${VERSION_PREFIX}/posts/${postId}/comments`,
-    getReplies: (commentId: string) =>
-      `${VERSION_PREFIX}/comments/${commentId}/replies`,
-    create: (postId: string) => `${VERSION_PREFIX}/posts/${postId}/comments`,
-    reply: (commentId: string) =>
-      `${VERSION_PREFIX}/comments/${commentId}/replies`,
-    update: (commentId: string) => `${VERSION_PREFIX}/comments/${commentId}`,
-    delete: (commentId: string) => `${VERSION_PREFIX}/comments/${commentId}`,
-    like: (commentId: string) => `${VERSION_PREFIX}/comments/${commentId}/like`,
-    unlike: (commentId: string) =>
-      `${VERSION_PREFIX}/comments/${commentId}/unlike`,
+    get: `${VERSION_PREFIX}/comments`,
   },
 };
