@@ -62,16 +62,17 @@ export default function MainLayout({ children }: Props) {
     <ProtectedRoute>
       <ProfileProvider>
         <PostProvider>
-          <div className="h-fit bg-cushion block md:flex relative w-full after:absolute after:inset-0 after:z-99 after:shadow-wrapper after:pointer-events-none">
-            {isMouted && (
-              <>
-                {isSmallScreen || <Sidebar />}
-                <Main className="bg-surface">{children}</Main>
-                {isLargeScreen && showSidebarRight && <SidebarRight />}
-                {isSmallScreen && !isPostShow && <BottomNavigationBar />}
-              </>
-            )}
+
+          <div className="h-fit bg-cushion block md:flex relative 3xl:w-[1600px] mx-auto w-full after:absolute after:inset-0 after:z-99 after:shadow-wrapper after:pointer-events-none">
+            {isMouted && <>
+              {isSmallScreen || <Sidebar />}
+              <Main className="bg-surface">{children}</Main>
+              {isLargeScreen && showSidebarRight && <SidebarRight />}
+              {isSmallScreen && !isPostShow && <BottomNavigationBar />}
+            </>}
+
           </div>
+
         </PostProvider>
       </ProfileProvider>
     </ProtectedRoute>

@@ -20,7 +20,7 @@ router.get('/', async (req: Request, res: Response, next: Function) => {
   }
 });
 
-router.post('/initiate', async (req: Request, res: Response, next: Function) => {
+router.post('/initiate', upload.single('file'), async (req: Request, res: Response, next: Function) => {
   try {
     await conversationController.initiateConversation(req, res);
   } catch (error) {
@@ -47,6 +47,14 @@ router.post('/:conversationId/messages', upload.single('file'), async (req: Requ
 router.post('/:conversationId/messages/:messageId/reactions', async (req: Request, res: Response, next: Function) => {
   try {
     await conversationController.reactToMessage(req, res);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.delete('/:conversationId/messages/:messageId', async (req: Request, res: Response, next: Function) => {
+  try {
+    await conversationController.deleteMessage(req, res);
   } catch (error) {
     next(error);
   }

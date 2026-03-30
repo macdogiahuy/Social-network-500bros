@@ -1,14 +1,15 @@
 import { ITokenProvider, TokenPayload } from "@shared/interface";
 
 import jwt from 'jsonwebtoken';
+import type { SignOptions } from 'jsonwebtoken';
 import { config } from "./config";
 
 
 class JwtTokenService implements ITokenProvider {
   private readonly secretKey: string;
-  private readonly expiresIn: string | number;
+  private readonly expiresIn: SignOptions['expiresIn'];
 
-  constructor(secretKey: string, expiresIn: string | number) {
+  constructor(secretKey: string, expiresIn: SignOptions['expiresIn']) {
     this.secretKey = secretKey;
     this.expiresIn = expiresIn;
   }

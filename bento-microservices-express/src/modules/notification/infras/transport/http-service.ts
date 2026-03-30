@@ -1,6 +1,7 @@
 import { INotificationUseCase } from "@modules/notification/interface";
 import { MdlFactory, Requester } from "@shared/interface";
 import { pagingDTOSchema } from "@shared/model";
+import { pickParam } from "@shared/utils/request";
 import { paginatedResponse, successResponse } from "@shared/utils/utils";
 import { Request, Response, Router } from "express";
 
@@ -18,7 +19,7 @@ export class HttpNotificationService {
   }
 
   async readAPI(req: Request, res: Response) {
-    const { id } = req.params;
+    const id = pickParam(req.params.id);
     const requester = res.locals.requester as Requester;
 
     const result = await this.useCase.read(id, requester);

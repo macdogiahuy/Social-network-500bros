@@ -1,8 +1,8 @@
 import { usePathname } from 'next/navigation';
 import React from 'react';
 
-import { getPosts, getTrendingPosts } from '@/apis/post';
-import { followUser, getUserFollower, getUserFollowing } from '@/apis/user';
+import { getPosts } from '@/apis/post';
+import { followUser, getUserFollower } from '@/apis/user';
 import { useUserProfile } from '@/context/user-context';
 
 import { IFollower } from '@/interfaces/follower';
@@ -25,14 +25,12 @@ export default function SidebarRight({ className }: SidebarRightProps) {
   const [activeTab, setActiveTab] = React.useState('1');
   const pathName = usePathname();
   const [posts, setPosts] = React.useState<IPost[]>([]);
-  const [trendingPosts, setTrendingPosts] = React.useState<IPost[]>([]);
   const [followers, setFollowers] = React.useState<IFollower[]>([]);
   const [isLoading, setIsLoading] = React.useState({
     posts: true,
     followers: true,
-    trending: false,
   });
-  const [error, setError] = React.useState({ posts: '', followers: '', trending: '' });
+  const [error, setError] = React.useState({ posts: '', followers: '' });
   const { userProfile } = useUserProfile();
 
   React.useEffect(() => {
@@ -59,21 +57,8 @@ export default function SidebarRight({ className }: SidebarRightProps) {
 
       setIsLoading((prev) => ({ ...prev, followers: true }));
       try {
-        const [followersResponse, followingsResponse] = await Promise.all([
-          getUserFollower(userProfile.id),
-          getUserFollowing(userProfile.id),
-        ]);
-
-        const combined = [...followersResponse.data, ...followingsResponse.data]
-          .filter((user) => user.id !== userProfile.id)
-          .reduce<IFollower[]>((acc, user) => {
-            if (!acc.some((item) => item.id === user.id)) {
-              acc.push(user);
-            }
-            return acc;
-          }, []);
-
-        setFollowers(combined);
+        const response = await getUserFollower(userProfile.id);
+        setFollowers(response.data);
       } catch (error) {
         console.error('Error fetching followers:', error);
         setError((prev) => ({
@@ -87,28 +72,6 @@ export default function SidebarRight({ className }: SidebarRightProps) {
 
     fetchFollowersData();
   }, [activeTab, userProfile?.id]);
-
-  React.useEffect(() => {
-    const fetchTrendingData = async () => {
-      if (activeTab !== '2') return;
-
-      setIsLoading((prev) => ({ ...prev, trending: true }));
-      try {
-        const response = await getTrendingPosts({ limit: 10, page: 1 });
-        setTrendingPosts(response.data);
-      } catch (error) {
-        console.error('Error fetching trending posts:', error);
-        setError((prev) => ({
-          ...prev,
-          trending: 'Failed to load trending posts.',
-        }));
-      } finally {
-        setIsLoading((prev) => ({ ...prev, trending: false }));
-      }
-    };
-
-    fetchTrendingData();
-  }, [activeTab]);
 
   const handleFollow = async (id: string) => {
     try {
@@ -179,10 +142,6 @@ export default function SidebarRight({ className }: SidebarRightProps) {
                   <SplashScreen />
                 ) : error.followers ? (
                   <div>{error.followers}</div>
-                ) : followers.length === 0 ? (
-                  <div className="rounded-[1.25rem] bg-neutral2-2 p-4 text-center text-tertiary">
-                    No followers or following users yet.
-                  </div>
                 ) : (
                   followers.map((follower) => (
                     <ProfileCard
@@ -202,24 +161,18 @@ export default function SidebarRight({ className }: SidebarRightProps) {
               </div>
             ) : (
               <ul className="max-h-[calc(100svh-68px)] overflow-y-scroll no-scrollbar">
-                {isLoading.trending ? (
-                  <SplashScreen />
-                ) : error.trending ? (
-                  <div>{error.trending}</div>
-                ) : (
-                  trendingPosts.map((post) => (
-                    <li key={post.id} className="mb-2">
-                      <TrendingPostCard
-                        topic={post.topic}
-                        alt={post.id}
-                        author={post.author}
-                        image={post.image}
-                        content={post.content}
-                        time={post.createdAt}
-                      />
-                    </li>
-                  ))
-                )}
+                {posts.map((post) => (
+                  <li key={post.id} className="mb-2">
+                    <TrendingPostCard
+                      topic={post.topic}
+                      alt={post.id}
+                      author={post.author}
+                      image={post.image}
+                      content={post.content}
+                      time={post.createdAt}
+                    />
+                  </li>
+                ))}
               </ul>
             )}
           </>

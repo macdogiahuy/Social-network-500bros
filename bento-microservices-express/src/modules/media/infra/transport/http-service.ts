@@ -1,7 +1,6 @@
-import { config } from '@shared/components/config';
+import { uploadBufferToCloudinary } from '@shared/services/cloudinary.service';
 import { AppError } from '@shared/utils/error';
 import { Request, Response } from 'express';
-import fs from 'fs';
 
 const ErrImageTooBig = AppError.from(new Error('image too big, max size is 5MB'), 400);
 const ErrMediaNotFound = AppError.from(new Error('media not found'), 400);
@@ -18,23 +17,25 @@ export class MediaHttpService {
 
     // Check file type
     if (!file.mimetype.startsWith('image/')) {
-      fs.unlinkSync(file.path);
       throw ErrInvalidFileType;
     }
 
     // Check file size (5MB)
     if (file.size > 5 * 1024 * 1024) {
-      fs.unlinkSync(file.path);
       throw ErrImageTooBig;
     }
 
+    const uploaded = await uploadBufferToCloudinary(file, {
+      folder: 'social-network-500bros/media',
+      resourceType: 'image'
+    });
+
     const fileUploaded = {
       filename: file.originalname,
-      url: `${config.upload.cdn}/${file.filename}`,
+      url: uploaded.secureUrl,
       ext: file.originalname.split('.').pop() || '',
       contentType: file.mimetype,
-      size: file.size,
-      file: file.buffer
+      size: file.size
     };
 
     res.status(200).json({ data: fileUploaded });

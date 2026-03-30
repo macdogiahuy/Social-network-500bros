@@ -1,6 +1,11 @@
 import prisma from '@shared/components/prisma';
 import { RedisClient } from '@shared/components/redis-pubsub/redis';
 import { AppEvent } from '@shared/model/event';
+import {
+  deleteCloudinaryAssetByUrl,
+  uploadBufferToCloudinary,
+} from '@shared/services/cloudinary.service';
+import { pickParam } from '@shared/utils/request';
 import crypto from 'crypto';
 import { Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
@@ -98,12 +103,18 @@ export class ConversationController {
       // GROUP CHAT
       if (userIds && Array.isArray(userIds) && userIds.length > 0) {
         console.log('Creating group conversation...');
+        const uploadedGroupImage = file
+          ? await uploadBufferToCloudinary(file, {
+              folder: 'social-network-500bros/conversations/groups',
+              resourceType: 'image'
+            })
+          : null;
         const conversation = await prisma.conversation.create({
           data: {
             id: crypto.randomUUID(),
             type: 'GROUP',
             name: name || 'New Group',
-            image: file ? `/uploads/${file.filename}` : null,
+            image: uploadedGroupImage?.secureUrl || null,
             participants: {
               create: [{ userId: senderId }, ...userIds.map((id: string) => ({ userId: id }))]
             }
@@ -225,7 +236,7 @@ export class ConversationController {
   async getMessages(req: Request, res: Response) {
     try {
       const userId = res.locals.requester?.sub;
-      const { conversationId } = req.params;
+      const conversationId = pickParam(req.params.conversationId);
 
       if (!userId) {
         return res.status(StatusCodes.UNAUTHORIZED).json({
@@ -293,7 +304,7 @@ export class ConversationController {
   async sendMessage(req: Request, res: Response) {
     try {
       const userId = res.locals.requester?.sub;
-      const { conversationId } = req.params;
+      const conversationId = pickParam(req.params.conversationId);
       const { content } = req.body;
       const file = req.file;
 
@@ -326,6 +337,13 @@ export class ConversationController {
         });
       }
 
+      const uploadedFile = file
+        ? await uploadBufferToCloudinary(file, {
+            folder: 'social-network-500bros/conversations/messages',
+            resourceType: 'auto'
+          })
+        : null;
+
       // Create the message
       const message = await prisma.message.create({
         data: {
@@ -333,8 +351,8 @@ export class ConversationController {
           content: content?.trim(),
           conversation: { connect: { id: conversationId } },
           sender: { connect: { id: userId } },
-          ...(file && {
-            fileUrl: `/uploads/${file.filename}`,
+          ...(file && uploadedFile && {
+            fileUrl: uploadedFile.secureUrl,
             fileName: file.originalname,
             fileSize: file.size,
             fileType: file.mimetype
@@ -363,7 +381,9 @@ export class ConversationController {
       const redis = RedisClient.getInstance();
 
       if (conversation.participants && conversation.participants.length > 0) {
-        const recipients = conversation.participants.filter((p) => p.userId !== userId);
+        const recipients = conversation.participants.filter(
+          (p: { userId: string }) => p.userId !== userId
+        );
         for (const recipient of recipients) {
           await redis.publish(
             new AppEvent(
@@ -413,7 +433,7 @@ export class ConversationController {
   async deleteConversation(req: Request, res: Response) {
     try {
       const userId = res.locals.requester?.sub;
-      const { conversationId } = req.params;
+      const conversationId = pickParam(req.params.conversationId);
 
       if (!userId) {
         return res.status(StatusCodes.UNAUTHORIZED).json({
@@ -459,10 +479,120 @@ export class ConversationController {
     }
   }
 
+  async deleteMessage(req: Request, res: Response) {
+    try {
+      const userId = res.locals.requester?.sub;
+      const conversationId = pickParam(req.params.conversationId);
+      const messageId = pickParam(req.params.messageId);
+
+      if (!userId) {
+        return res.status(StatusCodes.UNAUTHORIZED).json({
+          error: 'Unauthorized'
+        });
+      }
+
+      const conversation = await prisma.conversation.findFirst({
+        where: {
+          id: conversationId,
+          OR: [{ senderId: userId }, { receiverId: userId }, { participants: { some: { userId } } }]
+        },
+        include: {
+          participants: true
+        }
+      });
+
+      if (!conversation) {
+        return res.status(StatusCodes.NOT_FOUND).json({
+          error: 'Conversation not found'
+        });
+      }
+
+      const message = await prisma.message.findFirst({
+        where: {
+          id: messageId,
+          conversationId
+        }
+      });
+
+      if (!message) {
+        return res.status(StatusCodes.NOT_FOUND).json({
+          error: 'Message not found'
+        });
+      }
+
+      if (message.senderId !== userId) {
+        return res.status(StatusCodes.FORBIDDEN).json({
+          error: 'You can only delete your own messages'
+        });
+      }
+
+      await prisma.$transaction([
+        prisma.messageReaction.deleteMany({
+          where: { messageId }
+        }),
+        prisma.message.delete({
+          where: { id: messageId }
+        }),
+        prisma.conversation.update({
+          where: { id: conversationId },
+          data: { updatedAt: new Date() }
+        })
+      ]);
+
+      if (message.fileUrl) {
+        await deleteCloudinaryAssetByUrl(message.fileUrl);
+      }
+
+      const redis = RedisClient.getInstance();
+      const eventPayload = {
+        conversationId,
+        messageId
+      };
+
+      if (conversation.participants && conversation.participants.length > 0) {
+        const recipients = conversation.participants.filter(
+          (p: { userId: string }) => p.userId !== userId
+        );
+        for (const recipient of recipients) {
+          await redis.publish(
+            new AppEvent(
+              'MESSAGE_DELETED',
+              { ...eventPayload, receiverId: recipient.userId },
+              { senderId: userId }
+            )
+          );
+        }
+      } else {
+        const receiverId =
+          conversation.senderId === userId ? conversation.receiverId : conversation.senderId;
+        if (receiverId) {
+          await redis.publish(
+            new AppEvent(
+              'MESSAGE_DELETED',
+              { ...eventPayload, receiverId },
+              { senderId: userId }
+            )
+          );
+        }
+      }
+
+      return res.status(StatusCodes.OK).json({
+        message: 'Message deleted successfully',
+        data: { id: messageId }
+      });
+    } catch (error) {
+      console.error('Error deleting message:', error);
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        error: 'Internal server error'
+      });
+    }
+  }
+
   async reactToMessage(req: Request, res: Response) {
     try {
       const userId = res.locals.requester?.sub;
-      const { conversationId, messageId } = req.params;
+      const conversationId = pickParam(req.params.conversationId);
+      const messageId = pickParam(req.params.messageId);
       const { emoji } = req.body;
 
       if (!userId) {
@@ -552,7 +682,9 @@ export class ConversationController {
       };
 
       if (conversation.participants && conversation.participants.length > 0) {
-        const recipients = conversation.participants.filter((p) => p.userId !== userId);
+        const recipients = conversation.participants.filter(
+          (p: { userId: string }) => p.userId !== userId
+        );
         for (const recipient of recipients) {
           await redis.publish(
             new AppEvent('MESSAGE_REACTION', { ...eventPayload, receiverId: recipient.userId }, { senderId: userId })

@@ -41,5 +41,11 @@ export const config = {
     path: 'uploads',
     cdn: process.env.CDN_URL || `http://localhost:${port}/uploads`
   },
+  cloudinary: {
+    cloudName: process.env.CLOUDINARY_CLOUD_NAME,
+    apiKey: process.env.CLOUDINARY_API_KEY,
+    apiSecret: process.env.CLOUDINARY_API_SECRET,
+    baseFolder: process.env.CLOUDINARY_FOLDER || 'social-network-500bros'
+  },
   dbURL: `mysql://root:12345678@localhost:3307/social_network?connection_limit=100`
 };

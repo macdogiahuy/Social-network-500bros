@@ -19,7 +19,6 @@ import MobileSidebarTrigger from '@/components/sidebar-trigger/mobile-sidebar-tr
 import { usePost } from '@/context/post-context';
 
 import { USER_AVATAR_PLACEHOLDER } from '@/constant';
-import { useRouter } from 'next/navigation';
 
 // ----------------------------------------------------------------------
 
@@ -33,8 +32,7 @@ export default function HomeView() {
     string | null
   >(null);
 
-  const { userProfile: user, loading: isProfileLoading, error } = useUserProfile();
-  const router = useRouter();
+  const { userProfile: user } = useUserProfile();
 
   React.useEffect(() => {
     setFilter((prevFilter) => ({ ...prevFilter, str: searchStr }));
@@ -54,13 +52,7 @@ export default function HomeView() {
     };
   }, [isCreatePost]);
 
-  React.useEffect(() => {
-    if (!isProfileLoading && (!user || error)) {
-      router.replace('/login');
-    }
-  }, [error, isProfileLoading, router, user]);
-
-  if (isLoading || isProfileLoading || !user) return <SplashScreen />;
+  if (isLoading || !user) return <SplashScreen />;
 
   const toggleSidebar = () => {
     setIsSidebarShow(!isSidebarShow);

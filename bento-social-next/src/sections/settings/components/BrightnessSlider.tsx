@@ -1,20 +1,21 @@
 import React from 'react';
 
 import { Typography } from '@/components/typography';
-import { useSettings } from '@/context/theme-context';
 
 //-----------------------------------------------------------------------------------------------
 
 interface BrightnessSliderProps {
   width?: number;
   height?: number;
+  initialValue?: number;
 }
 
 const BrightnessSlider: React.FC<BrightnessSliderProps> = ({
   width = 168,
   height = 32,
+  initialValue = 0,
 }) => {
-  const { brightness, setBrightness } = useSettings();
+  const [brightness, setBrightness] = React.useState(initialValue);
   const [isDragging, setIsDragging] = React.useState(false);
 
   const handleSliderChange = (e: React.MouseEvent<HTMLDivElement>) => {

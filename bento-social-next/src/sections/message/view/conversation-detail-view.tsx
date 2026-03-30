@@ -1,25 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
+import React from 'react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
 
-import {
-  deleteConversation,
-  getConversationMessages,
-  getConversations,
-} from '@/apis/conversation';
+import { _conversations as fakeConversation } from '@/_mocks/_conversation';
+
 import { Avatar } from '@/components/avatar';
-import { Button } from '@/components/button';
-import { CloseIcon, TrashIcon } from '@/components/icons';
-import CameraIcon from '@/components/icons/camera';
+import { CloseIcon, MoreIcon } from '@/components/icons';
 import { Typography } from '@/components/typography';
-import { useSocket } from '@/context/socket-context';
-import { useUserProfile } from '@/context/user-context';
-import { IConversation, IMessage } from '@/interfaces/conversation';
-import { useRef } from 'react';
+import { Button } from '@/components/button';
 import { ChatInput, MessageItem } from '../components';
-import VideoCallModal from '../components/video-call-modal';
 
 //----------------------------------------------------------------------
 interface ConversationDetailPageProps {
@@ -30,194 +21,18 @@ export default function ConversationDetailPage({
   id,
 }: ConversationDetailPageProps) {
   const router = useRouter();
-  const { userProfile } = useUserProfile();
-  const [conversation, setConversation] = useState<IConversation | null>(null);
-  const [messages, setMessages] = useState<IMessage[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  const { socket } = useSocket();
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  // Chuyển đổi `id` sang kiểu số và tìm kiếm cuộc trò chuyện
+  const conversationId = Number(id);
+  const conversation = fakeConversation.find(
+    (item: any) => item.id === conversationId
+  );
 
-  const [isCallModalOpen, setIsCallModalOpen] = useState(false);
-  const [incomingCall, setIncomingCall] = useState<any>(null);
-  const [isInitiator, setIsInitiator] = useState(false);
-  const [callerName, setCallerName] = useState('');
-
-  const startVideoCall = () => {
-    setIsInitiator(true);
-    setIsCallModalOpen(true);
-    setCallerName('');
-  };
-
-  useEffect(() => {
-    if (!socket) return;
-    socket.on('call_user', (data: any) => {
-      console.log('Incoming call:', data);
-      setIncomingCall(data);
-      setCallerName(data.name || 'Unknown User');
-      setIsInitiator(false);
-      setIsCallModalOpen(true);
-    });
-    return () => {
-      socket.off('call_user');
-    };
-  }, [socket]);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  useEffect(() => {
-    if (!socket) return;
-
-    const handleNewMessage = (message: IMessage) => {
-      if (message.conversationId === id) {
-        setMessages((prev) => [...prev, message]);
-      }
-    };
-
-    const handleMessageReaction = (data: any) => {
-      if (data.conversationId !== id) return;
-
-      setMessages((prevMessages) => {
-        return prevMessages.map((msg) => {
-          if (msg.id === data.messageId) {
-            const reactions = msg.reactions ? [...msg.reactions] : [];
-            const existingIndex = reactions.findIndex(
-              (r) => r.userId === data.userId
-            );
-
-            if (data.action === 'add') {
-              if (existingIndex === -1) {
-                reactions.push({
-                  id: 'temp-' + Date.now(),
-                  userId: data.userId,
-                  emoji: data.emoji,
-                });
-              }
-            } else if (data.action === 'remove') {
-              if (existingIndex !== -1) {
-                reactions.splice(existingIndex, 1);
-              }
-            } else if (data.action === 'update') {
-              if (existingIndex !== -1) {
-                reactions[existingIndex] = {
-                  ...reactions[existingIndex],
-                  emoji: data.emoji,
-                };
-              }
-            }
-            return { ...msg, reactions };
-          }
-          return msg;
-        });
-      });
-    };
-
-    socket.on('new_message', handleNewMessage);
-    socket.on('message_reaction', handleMessageReaction);
-
-    return () => {
-      socket.off('new_message', handleNewMessage);
-      socket.off('message_reaction', handleMessageReaction);
-    };
-  }, [socket, id]);
-
-  useEffect(() => {
-    const fetchConversation = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const response = await getConversations();
-        const foundConversation = response.data.find((c) => c.id === id);
-
-        if (!foundConversation) {
-          setError('Conversation not found');
-          setConversation(null);
-          return;
-        }
-
-        setConversation(foundConversation);
-
-        const messagesResponse = await getConversationMessages(
-          foundConversation.id
-        );
-        setMessages(messagesResponse.data);
-      } catch (error) {
-        console.error('Error fetching conversation:', error);
-        setError('Error loading conversation');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (id) {
-      fetchConversation();
-    }
-  }, [id]);
+  if (!conversation) return <p>Conversation not found</p>;
 
   const handleBack = () => {
     router.push('/messages');
   };
-
-  const handleDelete = async () => {
-    if (
-      window.confirm(
-        'Are you sure you want to delete this conversation? This action cannot be undone.'
-      )
-    ) {
-      try {
-        await deleteConversation(id);
-        // Force reload to update sidebar list
-        window.location.href = '/messages';
-      } catch (error) {
-        console.error('Error deleting conversation:', error);
-        alert('Failed to delete conversation');
-      }
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <Typography level="base2m">Loading conversation...</Typography>
-      </div>
-    );
-  }
-
-  if (error || !conversation) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <Typography level="base2m" className="text-error">
-          {error || 'Conversation not found'}
-        </Typography>
-      </div>
-    );
-  }
-
-  const isGroup = conversation.type === 'GROUP';
-  let title = '';
-  let avatar = '';
-
-  if (isGroup) {
-    title = conversation.name || 'Group Chat';
-    avatar = conversation.image || '/img/default-avatar.jpg';
-  } else {
-    const otherUser =
-      conversation.senderId === userProfile?.id
-        ? conversation.receiver
-        : conversation.sender;
-
-    if (otherUser) {
-      title = `${otherUser.firstName} ${otherUser.lastName}`;
-      avatar = otherUser.avatar || '/img/default-avatar.jpg';
-    }
-  }
 
   return (
     <section className="block md:hidden w-full h-full flex-col bg-surface lg:flex">
@@ -225,25 +40,13 @@ export default function ConversationDetailPage({
         id="conversation-header"
         className="w-full flex items-center gap-4 py-3 pr-6 pl-3"
       >
-        <Avatar src={avatar} alt={title} size={40} />
+        <Avatar src={conversation.user.avatarUrl} alt="avatar" />
 
         <Typography level="base2m" className="text-primary grow">
-          {title}
+          {conversation.user.name}
         </Typography>
 
-        {!isGroup && (
-          <Button
-            onClick={startVideoCall}
-            className="p-2.5 text-primary hover:bg-primary/10"
-            child={<CameraIcon />}
-          />
-        )}
-
-        <Button
-          className="p-2.5 text-error hover:bg-error/10"
-          onClick={handleDelete}
-          child={<TrashIcon />}
-        />
+        <Button className="p-2.5" child={<MoreIcon />} />
 
         <Button
           onClick={handleBack}
@@ -256,46 +59,12 @@ export default function ConversationDetailPage({
         id="chat-container"
         className="flex flex-col gap-2 h-[calc(100vh-150px)] overflow-y-auto items-center justify-start p-3"
       >
-        {messages.length === 0 ? (
-          <Typography level="base2m" className="text-tertiary">
-            No messages yet. Start the conversation!
-          </Typography>
-        ) : (
-          messages.map((message) => (
-            <MessageItem
-              key={message.id}
-              message={message}
-              isOwnMessage={message.senderId === userProfile?.id}
-            />
-          ))
-        )}
-        <div ref={messagesEndRef} />
+        {conversation.messages?.map((message, index) => (
+          <MessageItem key={index} message={message} />
+        ))}
       </section>
 
-      <ChatInput
-        conversationId={conversation.id}
-        onMessageSent={() => {
-          getConversationMessages(conversation.id).then((response) => {
-            setMessages(response.data);
-          });
-        }}
-      />
-
-      {isCallModalOpen && (
-        <VideoCallModal
-          isOpen={isCallModalOpen}
-          onClose={() => setIsCallModalOpen(false)}
-          socket={socket}
-          receiverId={
-            conversation.senderId === userProfile?.id
-              ? conversation.receiverId!
-              : conversation.senderId
-          }
-          isInitiator={isInitiator}
-          incomingSignal={incomingCall}
-          callerName={callerName}
-        />
-      )}
+      <ChatInput />
     </section>
   );
 }
