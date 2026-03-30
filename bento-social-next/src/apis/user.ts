@@ -2,9 +2,9 @@
 import { IApiResponse } from '@/interfaces/api-response';
 import { IUserProfile } from '@/interfaces/user';
 import {
-    default as axios,
-    default as axiosInstance,
-    endpoints,
+  default as axios,
+  default as axiosInstance,
+  endpoints,
 } from '@/utils/axios';
 
 // ----------------------------------------------------------------------
@@ -22,15 +22,6 @@ export const getUserList = async <T>({
     params,
   });
 
-  return data;
-};
-
-export const getAllUsers = async (params?: {
-  search?: string;
-}): Promise<IApiResponse<IUserProfile[]>> => {
-  const { data } = await axiosInstance.get(endpoints.user.get, {
-    params,
-  });
   return data;
 };
 

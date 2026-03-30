@@ -11,7 +11,7 @@ export default function Add() {
         <path
           opacity="0.8"
           d="M12 3.75V12M12 12V20.25M12 12H3.75M12 12H20.25"
-          stroke="currentColor"
+          stroke="#F8F8F8"
           strokeOpacity="0.7"
           strokeWidth="1.5"
           strokeLinecap="round"

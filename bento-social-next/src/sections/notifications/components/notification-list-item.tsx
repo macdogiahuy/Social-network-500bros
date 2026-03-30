@@ -21,11 +21,6 @@ export const NotificationItem: React.FC<NItemProps> = ({
   const action = getAction(notification.action);
   const upperItem = generateActionIcon(notification.action);
   const timeAgo = getTimeAgo(notification.createdAt);
-  const sender = notification.sender;
-  const senderName = sender
-    ? `${sender.firstName} ${sender.lastName}`.trim() || sender.username
-    : 'Unknown user';
-  const senderAvatar = sender?.avatar ?? '/img/default-avatar.jpg';
 
   return (
     <li
@@ -33,7 +28,7 @@ export const NotificationItem: React.FC<NItemProps> = ({
       className="cursor-pointer relative bg-neutral2-2 rounded-[20px] p-3 flex gap-2.5 items-center self-stretch"
     >
       <CircleAvatar
-        path={senderAvatar}
+        path={notification.sender.avatar ?? '/img/default-avatar.jpg'}
         upperItem={upperItem}
         className=""
       />
@@ -43,7 +38,7 @@ export const NotificationItem: React.FC<NItemProps> = ({
             level="base2r"
             className="line-clamp-2 font-bold text-primary opacity-80"
           >
-            {senderName}
+            {notification.sender.firstName} {notification.sender.lastName}
           </Typography>
           <Typography level="base2r" className="text-tertiary">
             {action}

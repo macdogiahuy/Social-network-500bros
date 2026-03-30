@@ -12,7 +12,7 @@ function Ring1({ className }: { className?: string }) {
         cx="58.5"
         cy="58"
         r="57.25"
-        stroke="currentColor"
+        stroke="#F8F8F8"
         strokeOpacity="0.02"
         strokeWidth="1.5"
       />

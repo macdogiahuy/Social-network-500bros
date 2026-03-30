@@ -8,6 +8,10 @@ import { login } from '@/apis/auth';
 import { useAuth } from '@/context/auth-context';
 import { loginSchema } from '../data';
 
+import { Button } from '@/components/button';
+import { LogoSVG, GoogleSVG } from '@/components/icons';
+import { DebouncedInput } from '@/components/input';
+import { Typography } from '@/components/typography';
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -18,15 +22,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/alert-dialog';
-import { Button } from '@/components/button';
-import { GoogleSVG, LogoSVG } from '@/components/icons';
-import { DebouncedInput } from '@/components/input';
-import { Typography } from '@/components/typography';
 
-import { HOST_API } from '@/global-config';
 import styled from '@/styles/auth.module.css';
-import axiosInstance, { endpoints } from '@/utils/axios';
-import axios from 'axios';
 
 //----------------------------------------------------------------------
 
@@ -59,56 +56,15 @@ export default function LoginView() {
     }
 
     try {
-      console.log('Attempting login with:', { username, password });
-      const response = await login({ username, password });
-      console.log('Login response:', response);
+      const token = await login({ username, password });
 
-      if (response?.data) {
-        // Store the token
-        const token = response.data;
-        console.log('Setting token:', token);
-
-        // Clear any existing tokens first
-        sessionStorage.removeItem('token');
-        sessionStorage.removeItem('refreshToken');
-
-        // Set new tokens
-        sessionStorage.setItem('token', token);
-        sessionStorage.setItem('refreshToken', token);
-        setToken(token);
-
-        // Set Authorization header on the main axiosInstance
-        axiosInstance.defaults.headers.common['Authorization'] =
-          `Bearer ${token}`;
-
-        // Validate the token immediately to ensure it's working
-        try {
-          const validationResponse = await axios.post(
-            `${HOST_API}${endpoints.auth.refresh}`,
-            { token }
-          );
-          console.log('Token validation response:', validationResponse.data);
-
-          if (
-            !validationResponse.data?.data?.sub ||
-            !validationResponse.data?.data?.role
-          ) {
-            throw new Error('Invalid token format from server');
-          }
-        } catch (validationError) {
-          console.error('Token validation failed:', validationError);
-          throw new Error('Token validation failed after login');
-        }
-
+      if (token && token.data) {
+        setToken(token.data);
         router.push('/');
       }
     } catch (err: any) {
-      console.error('Login error:', err);
-
-      if (err.response?.data?.message) {
+      if (err.response && err.response.data && err.response.data.message) {
         setUsernameError(err.response.data.message);
-      } else if (err.message) {
-        setUsernameError(err.message);
       } else {
         setUsernameError('An error occurred. Please try again.');
       }
@@ -126,7 +82,7 @@ export default function LoginView() {
             <div className="flex flex-col mb-[2.5rem] items-center gap-6">
               <LogoSVG className="object-contain w-[150px]" />
 
-              <Typography level="h4" className="text-white">
+              <Typography level="h4" className="text-primary">
                 Sign in to Social
               </Typography>
             </div>
@@ -137,11 +93,11 @@ export default function LoginView() {
                   name="username"
                   placeholder="Username"
                   value={username}
-                  className="w-full bg-white/5 placeholder:text-white/35 base text-white text-sm px-5 py-4 rounded-xl transition border-[1.5px] border-white/10 focus:border-white/25"
+                  className="w-full bg-neutral2-5 placeholder:text-tertiary base text-primary text-sm px-5 py-4 rounded-xl transition border-[1.5px] border-transparent focus:border-neutral2-10"
                   onChange={(value: string) => setUsername(value)}
                 />
                 {usernameError && (
-                  <Typography level="captionr" className="text-red-400">
+                  <Typography level="captionr" className="text-red-500">
                     {usernameError}
                   </Typography>
                 )}
@@ -151,11 +107,11 @@ export default function LoginView() {
                   placeholder="Password"
                   value={password}
                   debounce={0}
-                  className="w-full bg-white/5 placeholder:text-white/35 base text-white text-sm px-5 py-4 rounded-xl transition border-[1.5px] border-white/10 focus:border-white/25"
+                  className="w-full bg-neutral2-5 placeholder:text-tertiary base text-primary text-sm px-5 py-4 rounded-xl transition border-[1.5px] border-transparent focus:border-neutral2-10"
                   onChange={(value: string) => setPassword(value)}
                 />
                 {passwordError && (
-                  <Typography level="captionr" className="text-red-400">
+                  <Typography level="captionr" className="text-red-500">
                     {passwordError}
                   </Typography>
                 )}
@@ -164,10 +120,10 @@ export default function LoginView() {
               <div className="flex flex-col gap-3">
                 <Button
                   type="submit"
-                  className={`w-full base px-[2rem] py-[0.875rem] ${loading ? 'bg-white/10 opacity-50' : 'bg-white opacity-100 hover:bg-white/90'}`}
+                  className={`w-full base px-[2rem] py-[0.875rem] ${loading ? 'bg-neutral2-5 opacity-50' : 'opacity-100'}`}
                   disabled={loading}
                   child={
-                    <Typography level="base2sm" className="text-neutral-900">
+                    <Typography level="base2sm" className="text-tertiary">
                       {loading ? 'Loading...' : 'Login'}
                     </Typography>
                   }
@@ -183,7 +139,7 @@ export default function LoginView() {
                           <GoogleSVG className="w-5 h-5" />
                           <Typography
                             level="base2sm"
-                            className="text-neutral-700"
+                            className="text-secondary"
                           >
                             Sign in with Google
                           </Typography>
@@ -206,11 +162,11 @@ export default function LoginView() {
 
                 <Typography
                   level="captionr"
-                  className="opacity-80 flex items-center gap-2 text-white/45 justify-center"
+                  className="opacity-80 flex items-center gap-2 text-secondary justify-center"
                 >
                   Don&rsquo;t have an account?
-                  <a href="/register" className="opacity-100 font-semibold text-white/80">
-                    <Typography level="captionsm" className="opacity-100 text-white/80">
+                  <a href="/register" className="opacity-100 font-semibold">
+                    <Typography level="captionsm" className="opacity-100">
                       Sign up, it&rsquo;s free!
                     </Typography>
                   </a>

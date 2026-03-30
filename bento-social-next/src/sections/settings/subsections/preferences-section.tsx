@@ -17,18 +17,10 @@ import ThemeSelectGroup, {
   ThemeOption,
 } from '../components/theme-select-group';
 
-import { useSettings } from '@/context/theme-context';
-import BrightnessSlider from '../components/BrightnessSlider';
 import ColorToggleGroup from '../components/color-toggle-group';
 import TextSizeSlider from '../components/TextSizeSlider';
-
+import BrightnessSlider from '../components/BrightnessSlider';
 export const PreferencesSection = () => {
-  const { 
-    reduceMotion, setReduceMotion, 
-    autoPlay, setAutoPlay, 
-    highQualityPhoto, setHighQualityPhoto 
-  } = useSettings();
-
   const accentColors = [
     {
       key: 'blue',
@@ -92,6 +84,7 @@ export const PreferencesSection = () => {
           </span>
           <ColorToggleGroup
             colorOptions={accentColors}
+            selectedColor={accentColors[0].key}
           />
         </SettingCard.item>
         <SettingCard.item className="group">
@@ -101,7 +94,7 @@ export const PreferencesSection = () => {
               Text size
             </Typography>
           </span>
-          <TextSizeSlider />
+          <TextSizeSlider initialValue={20} />
         </SettingCard.item>
 
         <SettingCard.item className="group">
@@ -122,10 +115,7 @@ export const PreferencesSection = () => {
               Reduce motion
             </Typography>
           </span>
-          <Toggle 
-            checked={reduceMotion} 
-            onChange={(e) => setReduceMotion(e.target.checked)} 
-          />
+          <Toggle />
         </SettingCard.item>
         <SettingCard.item className="group">
           <span className="inline-flex gap-3 items-center opacity-80 group-hover:opacity-100">
@@ -134,10 +124,7 @@ export const PreferencesSection = () => {
               Auto play
             </Typography>
           </span>
-          <Toggle 
-            checked={autoPlay} 
-            onChange={(e) => setAutoPlay(e.target.checked)} 
-          />
+          <Toggle />
         </SettingCard.item>
         <SettingCard.item className="group">
           <span className="inline-flex gap-3 items-center opacity-80 group-hover:opacity-100">
@@ -146,10 +133,7 @@ export const PreferencesSection = () => {
               High quality photo
             </Typography>
           </span>
-          <Toggle 
-            checked={highQualityPhoto} 
-            onChange={(e) => setHighQualityPhoto(e.target.checked)} 
-          />
+          <Toggle defaultChecked />
         </SettingCard.item>
       </SettingCard>
     </section>
