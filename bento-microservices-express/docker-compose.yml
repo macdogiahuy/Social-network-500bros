@@ -2,84 +2,39 @@ version: '3'
 
 services:
   mysql:
-    build:
-      context: ./mysql
-      dockerfile: Dockerfile
+    image: mysql:8.0
     container_name: mysql-bento
-    restart: unless-stopped
+    restart: always
     ports:
-      - '3307:3306'
+      - "3306:3306"
     environment:
-      - MYSQL_ROOT_PASSWORD=12345678
+      - MYSQL_ROOT_PASSWORD=200lab_secret
       - MYSQL_DATABASE=social_network
     volumes:
       - social_mysql:/var/lib/mysql
-      - ./docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
     networks:
       - social
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-          cpus: '0.5'
-        reservations:
-          memory: 256M
-          cpus: '0.25'
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 30s
-    stop_grace_period: 30s
-    ulimits:
-      nofile:
-        soft: 20000
-        hard: 40000
-    command: >
-      --performance_schema=OFF
-      --innodb_buffer_pool_size=256M
-      --innodb_log_file_size=64M
-      --max_connections=100
-      --thread_cache_size=50
-
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      timeout: 20s
+      retries: 10
   redis:
     image: redis:6.0
     container_name: redis
-    restart: unless-stopped
+    restart: always
     ports:
-      - '6379:6379'
+      - "6379:6379"
     volumes:
       - redis-bento:/data
-      - type: bind
-        source: ./redis/redis.conf
-        target: /usr/local/etc/redis/redis.conf
-        read_only: true
     environment:
-      - REDIS_PASSWORD=macdogiahuy_redis
+      - REDIS_PASSWORD=200lab_redis
     networks:
       - social
-    deploy:
-      resources:
-        limits:
-          memory: 256M
-          cpus: '0.3'
-        reservations:
-          memory: 128M
-          cpus: '0.1'
-    command: redis-server --requirepass macdogiahuy_redis --maxmemory 256mb --maxmemory-policy allkeys-lru
-    stop_grace_period: 10s
-    ulimits:
-      nofile:
-        soft: 10000
-        hard: 20000
+    command: /bin/sh -c 'redis-server --appendonly yes --requirepass $$REDIS_PASSWORD'
 
 networks:
   social:
-    driver: bridge
 
 volumes:
   social_mysql:
-    driver: local
   redis-bento:
-    driver: local
