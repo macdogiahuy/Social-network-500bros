@@ -13,6 +13,9 @@ export class RedisClient implements IEventPublisher {
   private constructor(connectionUrl: string) {
     const url = connectionUrl;
     this.redisClient = createClient({ url });
+    this.redisClient.on('error', (err) => {
+      Logger.error(`Redis client error: ${err.message}`);
+    });
   }
 
   public static async init(connectionUrl: string) {
@@ -50,6 +53,9 @@ export class RedisClient implements IEventPublisher {
   public async subscribe(topic: string, fn: EventHandler): Promise<void> {
     try {
       const subscriber = this.redisClient.duplicate();
+      subscriber.on('error', (err) => {
+        Logger.error(`Redis subscriber error: ${err.message}`);
+      });
       await subscriber.connect();
       await subscriber.subscribe(topic, fn);
 
