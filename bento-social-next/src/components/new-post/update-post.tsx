@@ -11,7 +11,8 @@ import { ITopic } from '@/interfaces/topic';
 import { type UpdatePost, updatePostSchema } from '@/schema/posts-schema';
 
 import { Avatar } from '@/components/avatar';
-import { ArrowBackIcon, CloseIcon } from '@/components/icons';
+import { ArrowBackIcon } from '@/components/icons';
+import { CloseIcon } from '@/components/icons';
 import { UploadImgButton } from '@/components/new-post/post-control';
 import { Typography } from '@/components/typography';
 
@@ -149,7 +150,7 @@ export default function UpdatePost({
           onClick={onClose}
         />
       </div>
-      <div className="w-full h-full rounded-button shadow-button bg-surface backdrop-blur-[50px] before:content-[''] before:absolute before:inset-0 before:rounded-button before:pointer-events-none before:border-[1.5px] before:border-neutral1-10 before:[mask-image:linear-gradient(175deg,#000,transparent_50%)] md:mx-auto md:w-[40rem] md:h-fit md:mt-[10%] md:rounded-button">
+      <div className="w-full h-full rounded-button shadow-button bg-[#282828b3] backdrop-blur-[50px] before:content-[''] before:absolute before:inset-0 before:rounded-button before:pointer-events-none before:border-[1.5px] before:border-[#ffffff1a] before:[mask-image:linear-gradient(175deg,#000,transparent_50%)] md:mx-auto md:w-[40rem] md:h-fit md:mt-[10%] md:rounded-button">
         <div className="md:hidden w-full flex items-center justify-between p-3">
           <Button
             className="size-10 p-2.5"
@@ -221,7 +222,7 @@ export default function UpdatePost({
             </div>
           </div>
 
-          <div className="fixed bottom-4 w-fit mx-auto rounded-[1.25rem] p-2 flex gap-2 items-center bg-neutral2-3 z-[999] md:p-3 md:w-full md:bg-transparent md:relative md:mx-0 md:justify-between md:bottom-0">
+          <div className="fixed bottom-4 w-fit mx-auto rounded-[1.25rem] p-2 flex gap-2 items-center bg-neutral2-3 z-20 md:p-3 md:w-full md:bg-transparent md:relative md:mx-0 md:justify-between md:bottom-0">
             <UploadImgButton
               fileInputRef={fileInputRef}
               setPreviewUrl={setPreviewUrl}
@@ -238,7 +239,6 @@ export default function UpdatePost({
               value={selectedTopic}
               onChange={setSelectedTopic}
               placeholder="Select a topic"
-              className="z-[9999]"
             />
 
             <Button

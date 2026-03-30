@@ -209,7 +209,7 @@ const SettingsView = () => {
       )}
 
       <section
-        className={`fixed z-99 inset-0 h-screen p-3 flex flex-col gap-3 bg-background transition-all ${currentView && !isLargeScreen ? ' opacity-100 translate-x-0 ' : ' opacity-0 translate-x-full '}  before:fixed before:inset-0 before:bg-background`}
+        className={`fixed z-99 inset-0 h-screen p-3 flex flex-col gap-3 bg-background transition-all ${currentView && !isLargeScreen ? ' opacity-100 translate-x-0 ' : ' opacity-0 translate-x-full '}  before:fixed before:inset-0 before:bg-[#313131]`}
       >
         <AppBar
           className="z-1"

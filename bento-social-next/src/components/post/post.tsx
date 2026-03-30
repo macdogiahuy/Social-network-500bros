@@ -11,30 +11,30 @@ import {
   unlikePost,
   unsavePost,
 } from '@/apis/post';
-import { useUserProfile } from '@/context/user-context';
 import { IChilrenComment, ICommment } from '@/interfaces/comment';
 import { IPost } from '@/interfaces/post';
 import { IUserProfile } from '@/interfaces/user';
+import { useUserProfile } from '@/context/user-context';
 
 import { cn } from '@/lib/utils';
 import { relativeTime } from '@/utils/relative-time';
 
-import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '../alert-dialog';
 import { Avatar } from '../avatar';
-import { Button } from '../button';
 import { BookmarkIcon, CommentIcon, HeartIcon, MoreIcon } from '../icons';
 import UpdatePost from '../new-post/update-post';
 import { Portal } from '../portal';
 import { Typography } from '../typography';
 import { MoreOptions } from './components/more-options';
 import { ReactItem } from './react-item';
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+} from '../alert-dialog';
+import { Button } from '../button';
 
 //-------------------------------------------------------------------------
 
@@ -64,32 +64,24 @@ export default function Post({
   const [isConfirm, setIsConfirm] = React.useState<boolean>(false);
 
   const isPostType = 'isFeatured' in data || 'hasSaved' in data;
-  const author = localData.author;
-  const authorHref = author?.id ? `/profile/${author.id}` : '#';
-  const authorName = [author?.firstName, author?.lastName]
-    .filter(Boolean)
-    .join(' ')
-    .trim() || 'Unknown user';
 
   const handleLikeClick = async () => {
     if (!isPostType) return;
 
+    const newLikedCount =
+      localData.likedCount + ((localData as IPost).hasLiked ? -1 : 1);
+    const updatedData = {
+      ...localData,
+      hasLiked: !(localData as IPost).hasLiked,
+      likedCount: newLikedCount,
+    } as IPost;
+
+    setLocalData(updatedData);
+    if (onUpdatePost) {
+      onUpdatePost(updatedData);
+    }
+
     try {
-      // Cập nhật giao diện người dùng trước
-      const newLikedCount =
-        localData.likedCount + ((localData as IPost).hasLiked ? -1 : 1);
-      const updatedData = {
-        ...localData,
-        hasLiked: !(localData as IPost).hasLiked,
-        likedCount: newLikedCount,
-      } as IPost;
-
-      setLocalData(updatedData);
-      if (onUpdatePost) {
-        onUpdatePost(updatedData);
-      }
-
-      // Gửi request đến server
       if ((localData as IPost).hasLiked) {
         await unlikePost(localData.id);
       } else {
@@ -97,7 +89,6 @@ export default function Post({
       }
     } catch (error) {
       console.error('Failed to update like status:', error);
-      // Khôi phục trạng thái cũ nếu có lỗi
       setLocalData(localData);
       if (onUpdatePost) {
         onUpdatePost(localData as IPost);
@@ -112,19 +103,17 @@ export default function Post({
   const handleBookmarkClick = async () => {
     if (!isPostType) return;
 
+    const updatedData = {
+      ...localData,
+      hasSaved: !(localData as IPost).hasSaved,
+    } as IPost;
+
+    setLocalData(updatedData);
+    if (onUpdatePost) {
+      onUpdatePost(updatedData);
+    }
+
     try {
-      // Cập nhật giao diện người dùng trước
-      const updatedData = {
-        ...localData,
-        hasSaved: !(localData as IPost).hasSaved,
-      } as IPost;
-
-      setLocalData(updatedData);
-      if (onUpdatePost) {
-        onUpdatePost(updatedData);
-      }
-
-      // Gửi request đến server
       if ((localData as IPost).hasSaved) {
         await unsavePost(localData.id);
       } else {
@@ -132,7 +121,6 @@ export default function Post({
       }
     } catch (error) {
       console.error('Failed to update bookmark status:', error);
-      // Khôi phục trạng thái cũ nếu có lỗi
       setLocalData(localData);
       if (onUpdatePost) {
         onUpdatePost(localData as IPost);
@@ -142,10 +130,9 @@ export default function Post({
 
   const handleReplyComment = () => {
     if (isPostType) return;
-    if (!author) return;
     setParentComment?.({
       id: data.id,
-      fullname: `${author.firstName ?? ''} ${author.lastName ?? ''}`.trim(),
+      fullname: `${data.author.firstName} ${data.author.lastName}`,
     });
   };
 
@@ -197,22 +184,22 @@ export default function Post({
     >
       <div className="flex items-start gap-5">
         <Link
-          href={authorHref}
+          href={`/profile/${localData.author.id}`}
           className="cursor-pointer"
         >
-          <Avatar alt="avatar" src={author?.avatar || ''} size={44} />
+          <Avatar alt="avatar" src={localData.author.avatar || ''} size={44} />
         </Link>
         <div className="w-full flex flex-col gap-2">
           <div className="relative z-0 flex justify-items-auto items-center">
             <Link
-              href={authorHref}
+              href={`/profile/${localData.author.id}`}
               className="cursor-pointer"
             >
               <Typography
                 level="base2m"
                 className="text-primary font-bold justify-self-start opacity-80 mr-4"
               >
-                {authorName}
+                {localData.author?.firstName} {localData.author?.lastName}
               </Typography>
             </Link>
             <Typography
@@ -222,7 +209,7 @@ export default function Post({
               {relativeTime(new Date(localData.createdAt))}
             </Typography>
 
-            {data.author?.id === (userProfile as IUserProfile).id && (
+            {data.author.id === (userProfile as IUserProfile).id && (
               <MoreIcon onClick={handleMoreOptions} />
             )}
           </div>
@@ -265,12 +252,10 @@ export default function Post({
         />
 
         {isPostType ? (
-          <Link href={`/posts/${localData.id}`}>
-            <ReactItem
-              value={(localData as IPost).commentCount || 0}
-              icon={<CommentIcon />}
-            />
-          </Link>
+          <ReactItem
+            value={(localData as IPost).commentCount || 0}
+            icon={<CommentIcon />}
+          />
         ) : (
           <button onClick={handleReplyComment}>
             <CommentIcon />

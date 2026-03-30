@@ -9,7 +9,7 @@ function Bubble({ className }: { className?: string }) {
       fill="none"
     >
       <g filter="url(#filter0_i_12214_113087)">
-        <circle cx="36.5" cy="36" r="36" fill="currentColor" fillOpacity="0.01" />
+        <circle cx="36.5" cy="36" r="36" fill="#F8F8F8" fillOpacity="0.01" />
       </g>
       <defs>
         <filter

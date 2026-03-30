@@ -135,16 +135,10 @@ export default function NotificationsView() {
         }
       />
       <Tabbar tabs={tabs} activeTab={activeTab} onTabChange={handleChangeTab} />
-      {filteredNotification.length > 0 ? (
-        <NotificationList
-          notifications={filteredNotification}
-          onReadSingle={handleReadSingle}
-        />
-      ) : (
-        <div className="rounded-[20px] bg-neutral2-2 p-6 text-center text-tertiary">
-          No notifications yet.
-        </div>
-      )}
+      <NotificationList
+        notifications={filteredNotification}
+        onReadSingle={handleReadSingle}
+      />
     </section>
   );
 }

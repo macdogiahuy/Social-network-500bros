@@ -13,7 +13,7 @@ export default function ArrowBack({ className }: { className?: string }) {
       <g opacity="0.8">
         <path
           d="M8.7537 18.2461L4.62502 14.1174C3.45345 12.9459 3.45344 11.0464 4.62501 9.87479L8.7537 5.74609M4.2537 11.9961L20.2537 11.9961"
-          stroke="currentColor"
+          stroke="#F8F8F8"
           strokeOpacity="0.7"
           strokeWidth="1.5"
           strokeLinecap="round"

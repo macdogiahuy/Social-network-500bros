@@ -50,7 +50,7 @@ export default function FilterBar({
             key={tag}
             onClick={() => handleTagClick(index)}
             className={`tag-card text-[#f8f8f8b3] text-sm font-semibold px-4 py-2 rounded-xl cursor-pointer hover:bg-hover ${
-              activeTagIndex === index ? 'bg-hover' : ''
+              activeTagIndex === index ? 'bg-[#f8f8f81a]' : ''
             }`}
           >
             {tag}
