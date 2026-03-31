@@ -5,6 +5,7 @@ import {
   deleteCloudinaryAssetByUrl,
   uploadBufferToCloudinary,
 } from '@shared/services/cloudinary.service';
+import Logger from '@shared/utils/logger';
 import { pickParam } from '@shared/utils/request';
 import crypto from 'crypto';
 import { Request, Response } from 'express';
@@ -77,7 +78,7 @@ export class ConversationController {
         data: conversations
       });
     } catch (error) {
-      console.error('Error getting conversations:', error);
+      Logger.error(`Error getting conversations: ${error}`);
       return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
         error: 'Internal server error'
       });
@@ -86,15 +87,12 @@ export class ConversationController {
 
   async initiateConversation(req: Request, res: Response) {
     try {
-      console.log('Initiating conversation with request body:', req.body);
+      Logger.info(`Initiating conversation`);
       const { receiverId, userIds, name } = req.body;
       const senderId = res.locals.requester?.sub;
       const file = req.file;
 
-      console.log('Sender ID:', senderId);
-
       if (!senderId) {
-        console.error('Unauthorized: No sender ID found in request');
         return res.status(StatusCodes.UNAUTHORIZED).json({
           error: 'Unauthorized'
         });
@@ -102,7 +100,7 @@ export class ConversationController {
 
       // GROUP CHAT
       if (userIds && Array.isArray(userIds) && userIds.length > 0) {
-        console.log('Creating group conversation...');
+        Logger.info('Creating group conversation');
         const uploadedGroupImage = file
           ? await uploadBufferToCloudinary(file, {
               folder: 'social-network-500bros/conversations/groups',
@@ -140,14 +138,14 @@ export class ConversationController {
 
       // DIRECT CHAT
       if (!receiverId) {
-        console.error('Bad Request: No receiver ID provided');
+        Logger.warning('Bad Request: No receiver ID provided');
         return res.status(StatusCodes.BAD_REQUEST).json({
           error: 'Receiver ID is required'
         });
       }
 
       // Check if conversation already exists
-      console.log('Checking for existing conversation...');
+      Logger.info('Checking for existing conversation');
       const existingConversation = await prisma.conversation.findFirst({
         where: {
           OR: [{ AND: [{ senderId }, { receiverId }] }, { AND: [{ senderId: receiverId }, { receiverId: senderId }] }]
@@ -181,13 +179,13 @@ export class ConversationController {
       });
 
       if (existingConversation) {
-        console.log('Found existing conversation:', existingConversation.id);
+        Logger.info(`Found existing conversation: ${existingConversation.id}`);
         return res.status(StatusCodes.OK).json({
           data: existingConversation
         });
       }
 
-      console.log('Creating new conversation...');
+      Logger.info('Creating new conversation');
       // Create new conversation
       const conversation = await prisma.conversation.create({
         data: {
@@ -221,12 +219,12 @@ export class ConversationController {
         }
       });
 
-      console.log('Created new conversation:', conversation.id);
+      Logger.info(`Created new conversation: ${conversation.id}`);
       return res.status(StatusCodes.CREATED).json({
         data: conversation
       });
     } catch (error) {
-      console.error('Error in initiateConversation:', error);
+      Logger.error(`Error in initiateConversation: ${error}`);
       return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
         error: 'Internal server error'
       });
@@ -237,6 +235,9 @@ export class ConversationController {
     try {
       const userId = res.locals.requester?.sub;
       const conversationId = pickParam(req.params.conversationId);
+      const { cursor, limit = '30' } = req.query;
+
+      const take = Math.min(Number(limit) || 30, 100);
 
       if (!userId) {
         return res.status(StatusCodes.UNAUTHORIZED).json({
@@ -244,7 +245,6 @@ export class ConversationController {
         });
       }
 
-      // Verify user has access to this conversation
       const conversation = await prisma.conversation.findFirst({
         where: {
           id: conversationId,
@@ -260,8 +260,10 @@ export class ConversationController {
 
       const messages = await prisma.message.findMany({
         where: {
-          conversationId
+          conversationId,
+          ...(cursor && { createdAt: { lt: new Date(cursor as string) } })
         },
+        take,
         include: {
           sender: {
             select: {
@@ -286,15 +288,22 @@ export class ConversationController {
           }
         },
         orderBy: {
-          createdAt: 'asc'
+          createdAt: 'desc'
         }
       });
 
+      const sortedMessages = messages.reverse();
+      const nextCursor = messages.length === take ? messages[0]?.createdAt?.toISOString() : null;
+
       return res.status(StatusCodes.OK).json({
-        data: messages
+        data: sortedMessages,
+        paging: {
+          nextCursor,
+          hasMore: messages.length === take
+        }
       });
     } catch (error) {
-      console.error('Error getting messages:', error);
+      Logger.error(`Error getting messages: ${error}`);
       return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
         error: 'Internal server error'
       });
@@ -423,7 +432,7 @@ export class ConversationController {
         data: message
       });
     } catch (error) {
-      console.error('Error sending message:', error);
+      Logger.error(`Error sending message: ${error}`);
       return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
         error: 'Internal server error'
       });
@@ -455,8 +464,10 @@ export class ConversationController {
         });
       }
 
-      // Delete the conversation and related records
       await prisma.$transaction([
+        prisma.messageReaction.deleteMany({
+          where: { message: { conversationId } }
+        }),
         prisma.message.deleteMany({
           where: { conversationId }
         }),
@@ -472,7 +483,7 @@ export class ConversationController {
         message: 'Conversation deleted successfully'
       });
     } catch (error) {
-      console.error('Error deleting conversation:', error);
+      Logger.error(`Error deleting conversation: ${error}`);
       return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
         error: 'Internal server error'
       });
@@ -581,7 +592,7 @@ export class ConversationController {
         data: { id: messageId }
       });
     } catch (error) {
-      console.error('Error deleting message:', error);
+      Logger.error(`Error deleting message: ${error}`);
       return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
         error: 'Internal server error'
       });
@@ -702,7 +713,7 @@ export class ConversationController {
 
       return res.status(StatusCodes.OK).json(result);
     } catch (error) {
-      console.error('Error reacting to message:', error);
+      Logger.error(`Error reacting to message: ${error}`);
       return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: 'Internal server error' });
     }
   }

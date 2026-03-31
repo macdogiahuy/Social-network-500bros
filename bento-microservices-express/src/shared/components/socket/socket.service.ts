@@ -1,3 +1,4 @@
+import { config } from '@shared/components/config';
 import { RedisClient } from '@shared/components/redis-pubsub/redis';
 import Logger from '@shared/utils/logger';
 import { Server as HttpServer } from 'http';
@@ -49,12 +50,7 @@ export class SocketService {
     }
 
     try {
-      // Decode token to get user ID.
-      // Note: In a real microservice, we might verify with the auth service,
-      // but for now we assume the token is valid if it can be decoded and contains 'sub'.
-      // Or verify using the same secret if available.
-      // Assuming standard JWT structure where 'sub' is userId.
-      const decoded = jwt.decode(token) as any;
+      const decoded = jwt.verify(token, config.jwtSecret) as any;
       if (!decoded || !decoded.sub) {
         return next(new Error('Invalid token'));
       }

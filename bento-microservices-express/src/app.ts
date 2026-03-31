@@ -5,10 +5,6 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import path from 'path';
 
-import commentRoutes from '@modules/comment/comment.route';
-import followingRoutes from '@modules/following/following.route';
-import userRoutes from '@modules/user/user.route';
-
 function buildApp(): Application {
   const app: Application = express();
 
@@ -23,26 +19,13 @@ function buildApp(): Application {
   app.set('trust proxy', 1);
   app.use(morgan('dev'));
 
-  // Serve static files from uploads directory
   const uploadsPath = path.join(__dirname, '../uploads');
-  console.log('Serving static files from:', uploadsPath);
   app.use('/uploads', express.static(uploadsPath));
 
   app.use('/ping', (_: Request, res: Response, next: NextFunction) => {
     res.status(200).json({
       message: 'pong'
     });
-  });
-
-  // Routes
-  app.use('/v1/users', userRoutes);
-  app.use('/v1/comments', commentRoutes);
-  app.use('/v1/following', followingRoutes);
-
-  // Global error handler (phải đặt sau tất cả các route)
-  app.use((err: any, req: Request, res: Response, next: NextFunction) => {
-    console.error('Global error:', err);
-    res.status(err.status || 500).json({ error: err.message || 'Internal Server Error' });
   });
 
   return app;

@@ -1,3 +1,4 @@
+import Logger from '@shared/utils/logger';
 import { successResponse } from '@shared/utils/utils';
 import { Request, Response } from 'express';
 import { IPasswordResetUsecase } from '../../usecase/password-reset.usecase';
@@ -18,7 +19,7 @@ export class PasswordResetHttpService {
       );
     } catch (error) {
       // Log the error but still return success to avoid revealing user existence
-      console.error('Error requesting password reset:', error);
+      Logger.error(`Error requesting password reset: ${error}`);
 
       successResponse(
         {

@@ -1,6 +1,7 @@
 import { jwtProvider } from '@shared/components/jwt';
 import prisma from '@shared/components/prisma';
 import { uploadBufferToCloudinary } from '@shared/services/cloudinary.service';
+import Logger from '@shared/utils/logger';
 import { Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import { singleton } from 'tsyringe';
@@ -41,7 +42,7 @@ export class UserController {
         data: userData
       });
     } catch (error) {
-      console.error('Error getting profile:', error);
+      Logger.error(`Error getting profile: ${error}`);
       return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
         error: 'Internal server error'
       });
@@ -94,7 +95,7 @@ export class UserController {
         message: 'Profile updated successfully'
       });
     } catch (error) {
-      console.error('Error updating profile:', error);
+      Logger.error(`Error updating profile: ${error}`);
       return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
         error: 'Internal server error'
       });
@@ -148,7 +149,7 @@ export class UserController {
         message: 'Avatar updated successfully'
       });
     } catch (error) {
-      console.error('Error updating avatar:', error);
+      Logger.error(`Error updating avatar: ${error}`);
       return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
         error: 'Internal server error'
       });
@@ -197,7 +198,7 @@ export class UserController {
         data: users
       });
     } catch (error) {
-      console.error('Error getting users:', error);
+      Logger.error(`Error getting users: ${error}`);
       return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
         error: 'Internal server error'
       });

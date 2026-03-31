@@ -1,4 +1,5 @@
 import prisma from '@shared/components/prisma';
+import Logger from '@shared/utils/logger';
 import { pickParam } from '@shared/utils/request';
 import { Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
@@ -31,7 +32,7 @@ export class NotificationController {
         data: notifications
       });
     } catch (error) {
-      console.error('Error getting notifications:', error);
+      Logger.error(`Error getting notifications: ${error}`);
       return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
         error: 'Internal server error'
       });
@@ -63,7 +64,7 @@ export class NotificationController {
         message: 'Notification marked as read'
       });
     } catch (error) {
-      console.error('Error marking notification as read:', error);
+      Logger.error(`Error marking notification as read: ${error}`);
       return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
         error: 'Internal server error'
       });
