@@ -24,6 +24,7 @@ import { NextFunction, Request, Response, static as serveStatic } from 'express'
 import { createServer } from 'http';
 import path from 'path';
 import app from './app';
+import migrationRoute from '@modules/migration/migration.route';
 import { setupMiddlewares } from './shared/middleware/index';
 
 async function bootServer(port: number) {
@@ -75,6 +76,7 @@ async function bootServer(port: number) {
     app.use('/v1', conversationModule);
 
     app.use('/uploads', serveStatic(path.join(__dirname, '../uploads')));
+    app.use('/v1', migrationRoute);
 
     // error handling
     app.use((err: Error, req: Request, res: Response, next: NextFunction) => {

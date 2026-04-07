@@ -219,15 +219,12 @@ export default function Post({
             </Typography>
           </Link>
 
-          {isPostType && (localData as IPost).image && (
+          {isPostType && (localData as IPost).image && !((localData as IPost).image?.includes('localhost')) && (
             <Link href={`/posts/${localData.id}`}>
               <Image
                 width={400}
                 height={400}
-                src={
-                  (localData as IPost).image ||
-                  'https://i.pinimg.com/originals/d3/6f/ef/d36fef4f4885354afcfd3753dee95741.jpg'
-                }
+                src={(localData as IPost).image!}
                 alt="post-image"
                 className="max-h-[400px] w-full rounded-[1.5rem] object-cover"
               />
