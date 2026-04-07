@@ -85,7 +85,24 @@ export class MysqlPostRepository implements IPostRepository {
   }
 
   async delete(id: string): Promise<boolean> {
-    await prisma.posts.delete({ where: { id } });
+    await prisma.$transaction(async (tx) => {
+      const comments = await tx.comments.findMany({
+        where: { postId: id },
+        select: { id: true }
+      });
+
+      if (comments.length > 0) {
+        const commentIds = comments.map((c) => c.id);
+        await tx.commentLikes.deleteMany({
+          where: { commentId: { in: commentIds } }
+        });
+      }
+
+      await tx.comments.deleteMany({ where: { postId: id } });
+      await tx.postLikes.deleteMany({ where: { postId: id } });
+      await tx.postSaves.deleteMany({ where: { postId: id } });
+      await tx.posts.delete({ where: { id } });
+    });
 
     return true;
   }
