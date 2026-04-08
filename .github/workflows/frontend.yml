@@ -27,13 +27,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: bento-social-next/package-lock.json
+          cache: 'yarn'
+          cache-dependency-path: bento-social-next/yarn.lock
 
       - name: Install dependencies
-        run: npm ci
+        run: yarn install --frozen-lockfile
 
       - name: Build Next.js
-        run: npm run build
+        run: yarn build
         env:
           NEXT_PUBLIC_API_DOMAIN: http://localhost:3000
