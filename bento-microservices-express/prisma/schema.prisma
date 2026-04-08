@@ -4,96 +4,267 @@ generator client {
 
 datasource db {
   provider = "mysql"
-  url      = env("DATABASE_URL")
+}
+
+// Model database
+
+model Users {
+  id            String        @id @map("id") @db.VarChar(36)
+  cover         String?       @db.VarChar(255)
+  avatar        String?       @map("avatar") @db.VarChar(255)
+  username      String        @unique @map("username") @db.VarChar(100)
+  firstName     String        @map("first_name") @db.VarChar(100)
+  lastName      String        @map("last_name") @db.VarChar(100)
+  password      String        @map("password") @db.VarChar(100)
+  salt          String        @map("salt") @db.VarChar(50)
+  role          users_role    @default(user) @map("role")
+  bio           String?       @map("bio") @db.VarChar(255)
+  websiteUrl    String?       @map("website_url") @db.VarChar(255)
+  followerCount Int?          @default(0) @map("follower_count") @db.UnsignedInt
+  postCount     Int?          @default(0) @map("post_count") @db.UnsignedInt
+  status        users_status? @default(active) @map("status")
+  createdAt     DateTime      @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt     DateTime      @updatedAt @map("updated_at") @db.Timestamp(0)
+
+  // Relations
+  createdRooms       ChatRooms[]            @relation("RoomCreator")
+  roomParticipations ChatRoomParticipants[]
+  chatMessages       ChatMessages[]
+  posts              Posts[]
+  comments           Comments[]
+  commentLikes       CommentLikes[]
+  postLikes          PostLikes[]
+  postSaves          PostSaves[]
+  stories            Stories[]
+  storyLikes         StoryLikes[]
+  storyViews         StoryViews[]
+  // --- Follow Relations Example ---
+  // If John follows Jane:
+  // Jane will appear in John's `following` list.
+  // John will appear in Jane's `followers` list.
+  followers          Follow[]               @relation("UserFollowedBy") // People following THIS user
+  following          Follow[]               @relation("UserFollows") // People THIS user is following
+  notifications      Notifications[]        @relation("NotificationsReceived")
+  notificationsSent  Notifications[]        @relation("NotificationsSent")
+
+  @@index([role], map: "role")
+  @@index([status], map: "status")
+  @@map("users")
+}
+
+model Follow {
+  createdAt DateTime @map("created_at") @db.Timestamp(0)
+
+  // --- Foreign Relations ---
+  // Example scenario: "John" clicks "Follow" on "Jane"'s profile.
+  // -> followerId  = John's ID (The person who initiated the follow)
+  // -> followingId = Jane's ID (The person who is being followed)
+
+  followerId String @map("follower_id") @db.VarChar(36)
+  follower   Users  @relation("UserFollows", fields: [followerId], references: [id], onDelete: Cascade) // Links back to John
+
+  followingId String @map("following_id") @db.VarChar(36)
+  following   Users  @relation("UserFollowedBy", fields: [followingId], references: [id], onDelete: Cascade) // Links back to Jane
+
+  @@id([followingId, followerId])
+  @@index([followerId], map: "follower_id")
+  @@map("follows")
+}
+
+// --- Chat Rooms ---
+model ChatRooms {
+  // Primary Key
+  id String @id @map("id") @db.VarChar(36)
+
+  // Data Fields
+  name   String?            @map("name") @db.VarChar(255) // Optional name for Group Chats
+  type   chat_rooms_type?   @default(direct) @map("type")
+  status chat_rooms_status? @default(pending) @map("status")
+
+  // Timestamps
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamp(0)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  // Foreign Keys & Relations
+  creatorId String @map("creator_id") @db.VarChar(36)
+  creator   Users  @relation("RoomCreator", fields: [creatorId], references: [id])
+
+  messages     ChatMessages[]
+  participants ChatRoomParticipants[] // 1 Room has Many Participants
+
+  // Indexes & Config
+  @@index([creatorId], map: "creator_id")
+  @@map("chat_rooms")
+}
+
+// Junction Table: Many to many relation Users <--> ChatRooms
+model ChatRoomParticipants {
+  users   Users  @relation(fields: [usersId], references: [id], onDelete: Cascade)
+  usersId String @db.VarChar(36)
+
+  chatRooms   ChatRooms @relation(fields: [chatRoomsId], references: [id], onDelete: Cascade)
+  chatRoomsId String    @db.VarChar(36)
+
+  role     chat_room_role? @default(MEMBER) @map("role") // admin vs member
+  joinedAt DateTime        @default(now()) @map("joined_at") @db.Timestamp(0)
+
+  @@id([chatRoomsId, usersId])
+  @@index([usersId], map: "users_id")
+  @@map("chat_room_participants")
 }
 
 model ChatMessages {
+  // Primary Key
   id        String   @id @map("id") @db.VarChar(36)
-  roomId    String   @map("room_id") @db.VarChar(36)
-  senderId  String   @map("sender_id") @db.VarChar(36)
+  // Data Fields
   content   String?  @map("content") @db.Text
+  // Timestamps
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(0)
-  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamp(0)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamp(0)
 
+  // Foreign Keys & Relations
+  roomId   String    @map("room_id") @db.VarChar(36)
+  room     ChatRooms @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  senderId String?   @map("sender_id") @db.VarChar(36)
+  sender   Users?    @relation(fields: [senderId], references: [id], onDelete: SetNull)
+
+  // Indexes & Config
   @@index([roomId], map: "room_id")
   @@index([senderId], map: "sender_id")
   @@map("chat_messages")
 }
 
-model ChatRooms {
-  id         String             @id @map("id") @db.VarChar(36)
-  creatorId  String             @map("creator_id") @db.VarChar(36)
-  receiverId String             @map("receiver_id") @db.VarChar(36)
-  type       chat_rooms_type?   @default(direct) @map("type")
-  status     chat_rooms_status? @default(pending) @map("status")
-  createdAt  DateTime           @default(now()) @map("created_at") @db.Timestamp(0)
-  updatedAt  DateTime           @default(now()) @map("updated_at") @db.Timestamp(0)
-  deletedAt  DateTime?          @map("deleted_at") @db.Timestamp(0)
+// --- Post model ---
+model Posts {
+  // Primary Key
+  id           String      @id @map("id") @db.VarChar(36)
+  // Data Fields
+  content      String      @map("content") @db.Text
+  image        String?     @map("image") @db.VarChar(255)
+  isFeatured   Boolean     @default(false) @map("is_featured")
+  commentCount Int         @default(0) @map("comment_count") @db.UnsignedInt
+  likedCount   Int         @default(0) @map("liked_count") @db.UnsignedInt
+  type         posts_type? @default(text) @map("type")
+  // Timestamps
+  createdAt    DateTime    @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt    DateTime    @updatedAt @map("updated_at") @db.Timestamp(0)
 
-  @@index([creatorId], map: "creator_id")
-  @@index([receiverId], map: "receiver_id")
-  @@map("chat_rooms")
+  // Foreign Keys & Relations
+  authorId String @map("author_id") @db.VarChar(36)
+  author   Users  @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  topicId  String      @map("topic_id") @db.VarChar(36)
+  topic    Topics      @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  comments Comments[]
+  likes    PostLikes[]
+  saves    PostSaves[]
+  tags     PostTags[]
+
+  // Indexes & Config
+  @@index([authorId], map: "author_id")
+  @@index([topicId], map: "topic_id")
+  @@index([isFeatured], map: "is_featured")
+  @@map("posts")
+}
+
+model Topics {
+  // Primary Key
+  id        String   @id @map("id") @db.VarChar(36)
+  // Data Fields
+  name      String   @unique @map("name") @db.VarChar(100)
+  postCount Int?     @default(0) @map("post_count") @db.UnsignedInt
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamp(0)
+  color     String   @map("color") @db.VarChar(10)
+  // Relations
+  posts     Posts[]
+
+  // Indexes & Config
+  @@map("topics")
+}
+
+model Comments {
+  // Primary Key
+  id         String          @id @map("id") @db.VarChar(36)
+  // Data Fields
+  content    String          @map("content") @db.Text
+  likedCount Int             @default(0) @map("liked_count")
+  replyCount Int             @default(0) @map("reply_count")
+  status     comments_status @default(pending) @map("status")
+  // Timestamps
+  createdAt  DateTime        @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt  DateTime?       @updatedAt @map("updated_at") @db.Timestamp(0)
+
+  // Foreign Keys & Relations
+  userId String @map("user_id") @db.VarChar(36)
+  user   Users  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  postId String @map("post_id") @db.VarChar(36)
+  post   Posts  @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  // Self-relation
+  // One parent comment can have multiple replies
+  parentId String?    @map("parent_id") @db.VarChar(36)
+  parent   Comments?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: NoAction)
+  replies  Comments[] @relation("CommentReplies")
+
+  commentLikes CommentLikes[]
+
+  @@index([postId], map: "post_id")
+  @@index([userId], map: "user_id")
+  @@index([parentId], map: "parent_id")
+  @@index([status], map: "status")
+  @@map("comments")
 }
 
 model CommentLikes {
+  createdAt DateTime @map("created_at") @db.Timestamp(0)
+
+  // Foreign relation
   commentId String   @map("comment_id") @db.VarChar(36)
-  userId    String   @map("user_id") @db.VarChar(36)
-  createdAt DateTime @map("created_at") @db.DateTime(6)
+  comment   Comments @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  userId String @map("user_id") @db.VarChar(36)
+  user   Users  @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([commentId, userId])
   @@map("comment_likes")
 }
 
-model Comments {
-  id         String          @id @map("id") @db.VarChar(36)
-  userId     String          @map("user_id") @db.VarChar(36)
-  postId     String          @map("post_id") @db.VarChar(36)
-  parentId   String?         @map("parent_id") @db.VarChar(36)
-  content    String          @map("content") @db.Text
-  likedCount Int             @default(0) @map("liked_count")
-  replyCount Int             @default(0) @map("reply_count")
-  status     comments_status @default(pending) @map("status")
-  createdAt  DateTime        @default(now()) @map("created_at") @db.DateTime(6)
-  updatedAt  DateTime?       @default(now()) @map("updated_at") @db.DateTime(6)
-  post       Posts          @relation(fields: [postId], references: [id], onDelete: Cascade)
-
-  @@index([parentId], map: "parent_id")
-  @@index([postId], map: "post_id")
-  @@index([status], map: "status")
-  @@index([userId], map: "user_id")
-  @@map("comments")
-}
-
-model Followers {
-  followerId  String   @map("follower_id") @db.VarChar(36)
-  followingId String   @map("following_id") @db.VarChar(36)
-  createdAt   DateTime @map("created_at") @db.DateTime(6)
-
-  @@id([followingId, followerId])
-  @@index([followerId], map: "follower_id")
-  @@map("followers")
-}
-
 model Notifications {
-  id         String                @id @map("id") @db.VarChar(36)
-  receiverId String                @map("receiver_id") @db.VarChar(36)
-  actorId    String?               @map("actor_id") @db.VarChar(36)
-  content    String?               @map("content") @db.Text
-  action     notifications_action? @map("action")
-  isSent     Boolean?              @map("is_sent")
-  isRead     Boolean?              @map("is_read")
-  createdAt  DateTime              @default(now()) @map("created_at") @db.Timestamp(0)
-  updatedAt  DateTime              @default(now()) @map("updated_at") @db.Timestamp(0)
+  // Primary Key
+  id        String                @id @map("id") @db.VarChar(36)
+  // Data Fields
+  content   String?               @map("content") @db.Text
+  action    notifications_action? @map("action")
+  isSent    Boolean               @default(false) @map("is_sent")
+  isRead    Boolean               @default(false) @map("is_read")
+  // Timestamps
+  createdAt DateTime              @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt DateTime              @updatedAt @map("updated_at") @db.Timestamp(0)
+
+  // Foreign relation
+  receiverId String  @map("receiver_id") @db.VarChar(36)
+  receiver   Users   @relation("NotificationsReceived", fields: [receiverId], references: [id], onDelete: Cascade)
+  actorId    String? @map("actor_id") @db.VarChar(36)
+  actor      Users?  @relation("NotificationsSent", fields: [actorId], references: [id], onDelete: SetNull)
 
   @@index([receiverId], map: "receiver_id")
+  @@index([actorId], map: "actor_id")
   @@map("notifications")
 }
 
 model PostLikes {
-  postId    String   @map("post_id") @db.VarChar(36)
-  userId    String   @map("user_id") @db.VarChar(36)
-  createdAt DateTime @map("created_at") @db.DateTime(6)
-  post      Posts    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  createdAt DateTime @map("created_at") @db.Timestamp(0)
+
+  // Foreign relation
+  postId String @map("post_id") @db.VarChar(36)
+  post   Posts  @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  userId String @map("user_id") @db.VarChar(36)
+  user   Users  @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([postId, userId])
   @@index([userId], map: "user_id")
@@ -101,9 +272,14 @@ model PostLikes {
 }
 
 model PostSaves {
-  postId    String   @map("post_id") @db.VarChar(36)
-  userId    String   @map("user_id") @db.VarChar(36)
-  createdAt DateTime @map("created_at") @db.DateTime(6)
+  createdAt DateTime @map("created_at") @db.Timestamp(0)
+
+  // Foreign relation
+  postId String @map("post_id") @db.VarChar(36)
+  post   Posts  @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  userId String @map("user_id") @db.VarChar(36)
+  user   Users  @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([postId, userId])
   @@index([userId], map: "user_id")
@@ -111,185 +287,84 @@ model PostSaves {
 }
 
 model PostTags {
-  postId    String   @map("post_id") @db.VarChar(36)
-  tagId     String   @map("tag_id") @db.VarChar(36)
-  createdAt DateTime @map("created_at") @db.DateTime(6)
+  createdAt DateTime @map("created_at") @db.Timestamp(0)
+
+  // Foreign relation
+  postId String @map("post_id") @db.VarChar(36)
+  post   Posts  @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  tagId String @map("tag_id") @db.VarChar(36)
+  tag   Tags   @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
   @@id([postId, tagId])
   @@index([tagId], map: "tag_id")
   @@map("post_tags")
 }
 
-model Posts {
-  id           String      @id @map("id") @db.VarChar(36)
-  content      String      @map("content") @db.Text
-  image        String?     @map("image") @db.VarChar(255)
-  authorId     String      @map("author_id") @db.VarChar(36)
-  topicId      String      @map("topic_id") @db.VarChar(36)
-  isFeatured   Boolean?    @default(false) @map("is_featured")
-  commentCount Int?        @default(0) @map("comment_count") @db.UnsignedInt
-  likedCount   Int?        @default(0) @map("liked_count") @db.UnsignedInt
-  type         posts_type? @default(text) @map("type")
-  createdAt    DateTime    @default(now()) @map("created_at") @db.Timestamp(0)
-  updatedAt    DateTime    @default(now()) @map("updated_at") @db.Timestamp(0)
-  author       Users       @relation(fields: [authorId], references: [id])
-  comments     Comments[]
-  likes        PostLikes[]
-
-  @@index([authorId], map: "author_id")
-  @@index([isFeatured], map: "is_featured")
-  @@map("posts")
-}
-
 model Stories {
+  // Primary Key
   id        String         @id @map("id") @db.VarChar(36)
-  userId    String         @map("user_id") @db.VarChar(36)
+  // Data Fields
   content   String?        @map("content") @db.Text
   likeCount Int            @default(0) @map("like_count") @db.UnsignedInt
   viewCount Int            @default(0) @map("view_count") @db.UnsignedInt
   media     Json?
-  expiresAt DateTime       @map("expires_at") @db.Timestamp(6)
   status    stories_status @default(active) @map("status")
-  createdAt DateTime       @unique(map: "stories_created_at_idx") @map("created_at") @db.Timestamp(6)
-  updatedAt DateTime       @map("updated_at") @db.Timestamp(6)
+  // Timestamps
+  createdAt DateTime       @unique(map: "stories_created_at_idx") @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt DateTime       @updatedAt @map("updated_at") @db.Timestamp(0)
+  expiresAt DateTime       @map("expires_at") @db.Timestamp(0)
+
+  // Foreign relation
+  userId String @map("user_id") @db.VarChar(36)
+  user   Users  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  likes StoryLikes[]
+  views StoryViews[]
 
   @@index([userId], map: "user_id")
+  @@index([status], map: "status")
   @@map("stories")
 }
 
 model StoryLikes {
-  storyId   String   @map("story_id") @db.VarChar(36)
-  userId    String   @map("user_id") @db.VarChar(36)
-  createdAt DateTime @map("created_at") @db.DateTime(6)
+  createdAt DateTime @map("created_at") @db.Timestamp(0)
+
+  storyId String  @map("story_id") @db.VarChar(36)
+  story   Stories @relation(fields: [storyId], references: [id], onDelete: Cascade)
+
+  userId String @map("user_id") @db.VarChar(36)
+  user   Users  @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([storyId, userId])
+  @@index([userId], map: "user_id")
   @@map("story_likes")
 }
 
 model StoryViews {
-  storyId   String   @map("story_id") @db.VarChar(36)
-  userId    String   @map("user_id") @db.VarChar(36)
-  createdAt DateTime @map("created_at") @db.DateTime(6)
+  createdAt DateTime @map("created_at") @db.Timestamp(0)
+
+  storyId String  @map("story_id") @db.VarChar(36)
+  story   Stories @relation(fields: [storyId], references: [id], onDelete: Cascade)
+
+  userId String @map("user_id") @db.VarChar(36)
+  user   Users  @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([storyId, userId])
+  @@index([userId], map: "user_id")
   @@map("story_views")
 }
 
 model Tags {
   id        String   @id @map("id") @db.VarChar(36)
-  name      String   @map("name") @db.VarChar(50)
+  name      String   @unique @map("name") @db.VarChar(50)
   postCount Int?     @default(0) @map("post_count") @db.UnsignedInt
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(0)
-  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamp(0)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamp(0)
+
+  posts PostTags[]
 
   @@map("tags")
-}
-
-model Topics {
-  id        String   @id @map("id") @db.VarChar(36)
-  name      String   @map("name") @db.VarChar(100)
-  color     String   @map("color") @db.VarChar(10)
-  postCount Int?     @default(0) @map("post_count") @db.UnsignedInt
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(0)
-  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamp(0)
-
-  @@map("topics")
-}
-
-model Users {
-  id                   String         @id @map("id") @db.VarChar(36)
-  username             String         @unique @map("username") @db.VarChar(50)
-  email                String?        @unique @map("email") @db.VarChar(100)
-  password             String         @map("password") @db.VarChar(255)
-  salt                 String         @map("salt") @db.VarChar(100)
-  firstName            String?        @map("first_name") @db.VarChar(50)
-  lastName             String?        @map("last_name") @db.VarChar(50)
-  avatar               String?        @map("avatar") @db.VarChar(255)
-  bio                  String?        @map("bio") @db.Text
-  websiteUrl           String?        @map("website_url") @db.VarChar(255)
-  role                 users_role     @default(user) @map("role")
-  status               users_status   @default(active) @map("status")
-  followerCount        Int            @default(0) @map("follower_count")
-  postCount           Int            @default(0) @map("post_count")
-  createdAt            DateTime       @default(now()) @map("created_at") @db.Timestamp(0)
-  updatedAt            DateTime       @default(now()) @map("updated_at") @db.Timestamp(0)
-  posts                Posts[]
-  sentMessages         Message[]      @relation("SentMessages")
-  sentConversations    Conversation[] @relation("SentConversations")
-  receivedConversations Conversation[] @relation("ReceivedConversations")
-  conversationParticipations ConversationParticipant[]
-  messageReactions     MessageReaction[]
-
-  @@map("users")
-}
-
-model Conversation {
-  id          String    @id @map("id") @db.VarChar(36)
-  senderId    String?   @map("sender_id") @db.VarChar(36)
-  receiverId  String?   @map("receiver_id") @db.VarChar(36)
-  name        String?   @map("name") @db.VarChar(100)
-  image       String?   @map("image") @db.VarChar(255)
-  type        String    @default("DIRECT") @map("type") // DIRECT, GROUP
-  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
-  updatedAt   DateTime  @default(now()) @map("updated_at") @db.Timestamp(0)
-  messages    Message[]
-  participants ConversationParticipant[]
-  sender      Users?    @relation("SentConversations", fields: [senderId], references: [id])
-  receiver    Users?    @relation("ReceivedConversations", fields: [receiverId], references: [id])
-
-  @@index([senderId])
-  @@index([receiverId])
-  @@map("conversations")
-}
-
-model ConversationParticipant {
-  id             String       @id @default(uuid()) @map("id") @db.VarChar(36)
-  conversationId String       @map("conversation_id") @db.VarChar(36)
-  userId         String       @map("user_id") @db.VarChar(36)
-  joinedAt       DateTime     @default(now()) @map("joined_at")
-  
-  conversation   Conversation @relation(fields: [conversationId], references: [id])
-  user           Users        @relation(fields: [userId], references: [id])
-
-  @@unique([conversationId, userId])
-  @@index([userId])
-  @@map("conversation_participants")
-}
-
-model Message {
-  id             String       @id @map("id") @db.VarChar(36)
-  conversationId String       @map("conversation_id") @db.VarChar(36)
-  senderId       String       @map("sender_id") @db.VarChar(36)
-  content        String?      @map("content") @db.Text
-  fileUrl        String?      @map("file_url") @db.VarChar(1000)
-  fileName       String?      @map("file_name") @db.VarChar(255)
-  fileSize       Int?         @map("file_size") @db.Int
-  fileType       String?      @map("file_type") @db.VarChar(100)
-  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamp(0)
-  updatedAt      DateTime     @default(now()) @map("updated_at") @db.Timestamp(0)
-  conversation   Conversation @relation(fields: [conversationId], references: [id])
-  sender         Users        @relation("SentMessages", fields: [senderId], references: [id])
-  reactions      MessageReaction[]
-
-  @@index([conversationId], map: "conversation_id")
-  @@index([senderId], map: "sender_id")
-  @@map("messages")
-}
-
-model MessageReaction {
-  id        String   @id @map("id") @db.VarChar(36)
-  messageId String   @map("message_id") @db.VarChar(36)
-  userId    String   @map("user_id") @db.VarChar(36)
-  emoji     String   @map("emoji") @db.VarChar(10)
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(0)
-  
-  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
-  user      Users    @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([messageId, userId])
-  @@index([messageId])
-  @@index([userId])
-  @@map("message_reactions")
 }
 
 enum notifications_action {
@@ -307,6 +382,11 @@ enum chat_rooms_status {
   pending
   active
   deleted
+}
+
+enum chat_room_role {
+  ADMIN
+  MEMBER
 }
 
 enum stories_status {
