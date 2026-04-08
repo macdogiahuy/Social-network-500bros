@@ -44,9 +44,8 @@ model Users {
   // John will appear in Jane's `followers` list.
   followers          Follow[]               @relation("UserFollowedBy") // People following THIS user
   following          Follow[]               @relation("UserFollows") // People THIS user is following
-
-  notifications Notifications[]
-  notifications Notifications[]
+  notifications      Notifications[]        @relation("NotificationsReceived")
+  notificationsSent  Notifications[]        @relation("NotificationsSent")
 
   @@index([role], map: "role")
   @@index([status], map: "status")
