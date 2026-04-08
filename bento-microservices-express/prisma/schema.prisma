@@ -195,7 +195,7 @@ model Comments {
   status     comments_status @default(pending) @map("status")
   // Timestamps
   createdAt  DateTime        @default(now()) @map("created_at") @db.Timestamp(0)
-  updatedAt  DateTime?       @updatedAt @map("updated_at") @db.Timestamp(0)
+  updatedAt  DateTime        @updatedAt @map("updated_at") @db.Timestamp(0)
 
   // Foreign Keys & Relations
   userId String @map("user_id") @db.VarChar(36)
@@ -311,7 +311,7 @@ model Stories {
   media     Json?
   status    stories_status @default(active) @map("status")
   // Timestamps
-  createdAt DateTime       @unique(map: "stories_created_at_idx") @default(now()) @map("created_at") @db.Timestamp(0)
+  createdAt DateTime       @default(now()) @map("created_at") @db.Timestamp(0)
   updatedAt DateTime       @updatedAt @map("updated_at") @db.Timestamp(0)
   expiresAt DateTime       @map("expires_at") @db.Timestamp(0)
 
