@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client';
 import prisma from '@shared/components/prisma';
+import Logger from '@shared/utils/logger';
 import crypto from 'crypto';
 import { Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
@@ -11,21 +12,15 @@ export class PostController {
 
   async createPost(req: Request, res: Response) {
     try {
-      console.log('Request headers:', req.headers);
-      console.log('Requester:', res.locals.requester);
-
       const userId = res.locals.requester?.sub;
-      console.log('User ID from token:', userId);
 
       if (!userId) {
-        console.log('Unauthorized: No user ID found in token');
         return res.status(StatusCodes.UNAUTHORIZED).json({
           error: 'Unauthorized'
         });
       }
 
       const { content, image, topicId } = req.body;
-      console.log('Request body:', { content, image, topicId });
 
       if (!content?.trim()) {
         return res.status(StatusCodes.BAD_REQUEST).json({
@@ -73,7 +68,7 @@ export class PostController {
         }
       });
     } catch (error) {
-      console.error('Error creating post:', error);
+      Logger.error(`Error creating post: ${error}`);
       return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
         error: 'Internal server error'
       });
@@ -82,7 +77,11 @@ export class PostController {
 
   async getPosts(req: Request, res: Response) {
     try {
-      const { type, limit = 10, str, userId } = req.query;
+      const { type, limit = '10', page = '1', str, userId } = req.query;
+
+      const take = Math.min(Number(limit) || 10, 50);
+      const currentPage = Math.max(Number(page) || 1, 1);
+      const skip = (currentPage - 1) * take;
 
       const where: Prisma.PostsWhereInput = {
         ...(type === 'media' && { type: 'media' }),
@@ -90,18 +89,14 @@ export class PostController {
         ...(userId && { authorId: userId as string })
       };
 
-      const posts = await prisma.posts.findMany({
-        where,
-        take: Number(limit),
-        orderBy: { createdAt: 'desc' }
-      });
-
-      // Get author details and counts separately
-      const postsWithDetails = await Promise.all(
-        posts.map(async (post) => {
-          const [author, commentCount, likeCount] = await Promise.all([
-            prisma.users.findUnique({
-              where: { id: post.authorId },
+      const [posts, total] = await Promise.all([
+        prisma.posts.findMany({
+          where,
+          take,
+          skip,
+          orderBy: { createdAt: 'desc' },
+          include: {
+            author: {
               select: {
                 id: true,
                 username: true,
@@ -109,31 +104,37 @@ export class PostController {
                 lastName: true,
                 avatar: true
               }
-            }),
-            prisma.comments.count({
-              where: { postId: post.id }
-            }),
-            prisma.postLikes.count({
-              where: { postId: post.id }
-            })
-          ]);
-
-          return {
-            ...post,
-            author,
+            },
             _count: {
-              comments: commentCount,
-              likes: likeCount
+              select: {
+                comments: true,
+                likes: true
+              }
             }
-          };
-        })
-      );
+          }
+        }),
+        prisma.posts.count({ where })
+      ]);
+
+      const postsWithDetails = posts.map((post) => ({
+        ...post,
+        _count: {
+          comments: post._count.comments,
+          likes: post._count.likes
+        }
+      }));
 
       return res.status(StatusCodes.OK).json({
-        data: postsWithDetails
+        data: postsWithDetails,
+        paging: {
+          page: currentPage,
+          limit: take,
+          total,
+          totalPages: Math.ceil(total / take)
+        }
       });
     } catch (error) {
-      console.error('Error getting posts:', error);
+      Logger.error(`Error getting posts: ${error}`);
       return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
         error: 'Internal server error'
       });

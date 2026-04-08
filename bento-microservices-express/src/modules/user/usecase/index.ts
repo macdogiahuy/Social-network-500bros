@@ -2,6 +2,7 @@ import { jwtProvider } from '@shared/components/jwt';
 import { IRepository, Requester, TokenPayload, UserRole } from '@shared/interface';
 import { Paginated, PagingDTO } from '@shared/model';
 import { AppError, ErrNotFound } from '@shared/utils/error';
+import Logger from '@shared/utils/logger';
 import bcrypt from 'bcrypt';
 import { v7 } from 'uuid';
 import { IUserUseCase } from '../interface';
@@ -84,7 +85,7 @@ export class UserUseCase implements IUserUseCase {
       if (error instanceof AppError) {
         throw error;
       }
-      console.error('Login error:', error);
+      Logger.error(`Login error: ${error}`);
       throw AppError.from(ErrInvalidUsernameAndPassword, 400).withLog('Login failed: Internal server error');
     }
 

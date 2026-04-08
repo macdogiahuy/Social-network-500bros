@@ -14,15 +14,15 @@ const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [token, setTokenState] = React.useState<string | null>(
-    typeof window !== 'undefined' ? sessionStorage.getItem('token') : null
+    typeof window !== 'undefined' ? localStorage.getItem('token') : null
   );
 
   const setToken = (newToken: string | null) => {
     setTokenState(newToken);
     if (newToken) {
-      sessionStorage.setItem('token', newToken);
+      localStorage.setItem('token', newToken);
     } else {
-      sessionStorage.removeItem('token');
+      localStorage.removeItem('token');
     }
   };
 

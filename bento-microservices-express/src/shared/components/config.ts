@@ -47,5 +47,5 @@ export const config = {
     apiSecret: process.env.CLOUDINARY_API_SECRET,
     baseFolder: process.env.CLOUDINARY_FOLDER || 'social-network-500bros'
   },
-  dbURL: `mysql://root:12345678@localhost:3307/social_network?connection_limit=100`
+  dbURL: process.env.DATABASE_URL || ''
 };
