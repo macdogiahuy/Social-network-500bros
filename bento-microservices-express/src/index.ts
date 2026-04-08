@@ -15,6 +15,7 @@ import { setupUserConsumer, setupUserModule } from '@modules/user/module';
 import { config } from '@shared/components/config';
 import prisma from '@shared/components/prisma';
 import { RedisClient } from '@shared/components/redis-pubsub/redis';
+import { RedisCache } from '@shared/components/redis-cache';
 import { SocketService } from '@shared/components/socket/socket.service';
 import { ServiceContext } from '@shared/interface';
 import { TokenIntrospectRPCClient } from '@shared/rpc/verify-token';
@@ -36,6 +37,7 @@ async function bootServer(port: number) {
 
     const connectionUrl = config.redis.url as string;
     await RedisClient.init(connectionUrl);
+    await RedisCache.init(connectionUrl);
 
     await prisma.$connect();
     Logger.success('Prisma connected to database');

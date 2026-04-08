@@ -165,6 +165,9 @@ model Posts {
   @@index([authorId], map: "author_id")
   @@index([topicId], map: "topic_id")
   @@index([isFeatured], map: "is_featured")
+  @@index([createdAt(sort: Desc)], map: "created_at_desc")
+  @@index([authorId, createdAt(sort: Desc)], map: "author_created_at")
+  @@index([topicId, createdAt(sort: Desc)], map: "topic_created_at")
   @@map("posts")
 }
 
@@ -216,6 +219,7 @@ model Comments {
   @@index([userId], map: "user_id")
   @@index([parentId], map: "parent_id")
   @@index([status], map: "status")
+  @@index([postId, createdAt(sort: Desc)], map: "post_created_at")
   @@map("comments")
 }
 
@@ -230,6 +234,7 @@ model CommentLikes {
   user   Users  @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([commentId, userId])
+  @@index([createdAt(sort: Desc)], map: "created_at_desc")
   @@map("comment_likes")
 }
 
@@ -253,6 +258,8 @@ model Notifications {
 
   @@index([receiverId], map: "receiver_id")
   @@index([actorId], map: "actor_id")
+  @@index([receiverId, isRead], map: "receiver_read")
+  @@index([receiverId, createdAt(sort: Desc)], map: "receiver_created_at")
   @@map("notifications")
 }
 
@@ -268,6 +275,7 @@ model PostLikes {
 
   @@id([postId, userId])
   @@index([userId], map: "user_id")
+  @@index([createdAt(sort: Desc)], map: "created_at_desc")
   @@map("post_likes")
 }
 
@@ -324,6 +332,8 @@ model Stories {
 
   @@index([userId], map: "user_id")
   @@index([status], map: "status")
+  @@index([expiresAt(sort: Asc)], map: "expires_at_asc")
+  @@index([userId, createdAt(sort: Desc)], map: "user_created_at")
   @@map("stories")
 }
 

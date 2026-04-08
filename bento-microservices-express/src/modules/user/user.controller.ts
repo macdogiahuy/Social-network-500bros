@@ -1,5 +1,6 @@
 import { jwtProvider } from '@shared/components/jwt';
 import prisma from '@shared/components/prisma';
+import { RedisCache } from '@shared/components/redis-cache';
 import { uploadBufferToCloudinary } from '@shared/services/cloudinary.service';
 import { Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
@@ -26,6 +27,14 @@ export class UserController {
       }
 
       const { sub } = payload;
+      
+      // Try cache first
+      const cacheKey = `user:profile:${sub}`;
+      const cached = await RedisCache.getInstance().get(cacheKey);
+      if (cached) {
+        return res.status(StatusCodes.OK).json({ data: cached });
+      }
+
       const user = await prisma.users.findUnique({ where: { id: sub } });
 
       if (!user) {
@@ -36,6 +45,9 @@ export class UserController {
 
       // Remove sensitive data
       const { password, salt, ...userData } = user;
+
+      // Cache for 10 minutes
+      await RedisCache.getInstance().set(cacheKey, userData, 600);
 
       return res.status(StatusCodes.OK).json({
         data: userData
@@ -85,6 +97,9 @@ export class UserController {
           updatedAt: new Date()
         }
       });
+
+      // Invalidate user cache
+      await RedisCache.getInstance().del(`user:profile:${sub}`);
 
       // Remove sensitive data
       const { password, salt, ...userData } = updatedUser;
@@ -139,6 +154,9 @@ export class UserController {
           updatedAt: new Date()
         }
       });
+
+      // Invalidate user cache
+      await RedisCache.getInstance().del(`user:profile:${sub}`);
 
       // Remove sensitive data
       const { password, salt, ...userData } = updatedUser;

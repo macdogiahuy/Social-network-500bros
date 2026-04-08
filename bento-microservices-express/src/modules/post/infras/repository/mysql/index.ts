@@ -2,6 +2,7 @@ import { IPostRepository } from '@modules/post/interfaces';
 import { Post, PostCondDTO, Type } from '@modules/post/model';
 import { UpdatePostDTO } from '@modules/post/model/dto';
 import prisma from '@shared/components/prisma';
+import { RedisCache } from '@shared/components/redis-cache';
 import { Paginated, PagingDTO } from '@shared/model';
 
 export class MysqlPostRepository implements IPostRepository {
@@ -81,6 +82,9 @@ export class MysqlPostRepository implements IPostRepository {
   async update(id: string, dto: UpdatePostDTO): Promise<boolean> {
     await prisma.posts.update({ where: { id }, data: dto });
 
+    // Invalidate post cache
+    await RedisCache.getInstance().delPattern('posts:*');
+
     return true;
   }
 
@@ -103,6 +107,9 @@ export class MysqlPostRepository implements IPostRepository {
       await tx.postSaves.deleteMany({ where: { postId: id } });
       await tx.posts.delete({ where: { id } });
     });
+
+    // Invalidate post cache
+    await RedisCache.getInstance().delPattern('posts:*');
 
     return true;
   }
