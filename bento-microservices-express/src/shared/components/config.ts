@@ -7,21 +7,28 @@ dotenv.config({
 const port = process.env.PORT || '3000';
 const host = process.env.HOST || '0.0.0.0';
 
+const jwtSecret = process.env.JWT_SECRET_KEY;
+if (!jwtSecret) {
+  throw new Error('FATAL: JWT_SECRET_KEY environment variable is required');
+}
+
+const defaultServiceUrl = `http://localhost:${port}/v1`;
+
 export const config = {
   envName: process.env.NODE_ENV,
   port,
   host,
-  jwtSecret: process.env.JWT_SECRET_KEY || '200L@b.io',
+  jwtSecret,
   rpc: {
-    jwtSecret: process.env.JWT_SECRET_KEY || '200L@b.io',
+    jwtSecret,
     introspectUrl: process.env.VERIFY_TOKEN_URL || `http://localhost:${port}/v1/rpc/introspect`,
-    postServiceURL: process.env.POST_SERVICE_URL || `http://localhost:${port}/v1`,
-    userServiceURL: process.env.USER_SERVICE_URL || `http://localhost:${port}/v1`,
-    commentServiceURL: process.env.COMMENT_SERVICE_URL || `http://localhost:${port}/v1`,
-    followServiceURL: process.env.FOLLOW_SERVICE_URL || `http://localhost:${port}/v1`,
-    topicServiceURL: process.env.TOPIC_SERVICE_URL || `http://localhost:${port}/v1`,
-    postLikeServiceURL: process.env.POST_LIKE_SERVICE_URL || `http://localhost:${port}/v1`,
-    postSavedServiceURL: process.env.POST_SAVED_SERVICE_URL || `http://localhost:${port}/v1`
+    postServiceURL: process.env.POST_SERVICE_URL || defaultServiceUrl,
+    userServiceURL: process.env.USER_SERVICE_URL || defaultServiceUrl,
+    commentServiceURL: process.env.COMMENT_SERVICE_URL || defaultServiceUrl,
+    followServiceURL: process.env.FOLLOW_SERVICE_URL || defaultServiceUrl,
+    topicServiceURL: process.env.TOPIC_SERVICE_URL || defaultServiceUrl,
+    postLikeServiceURL: process.env.POST_LIKE_SERVICE_URL || defaultServiceUrl,
+    postSavedServiceURL: process.env.POST_SAVED_SERVICE_URL || defaultServiceUrl
   },
   redis: {
     host: process.env.REDIS_HOST,
@@ -47,5 +54,5 @@ export const config = {
     apiSecret: process.env.CLOUDINARY_API_SECRET,
     baseFolder: process.env.CLOUDINARY_FOLDER || 'social-network-500bros'
   },
-  dbURL: `mysql://root:12345678@localhost:3307/social_network?connection_limit=100`
+  dbURL: process.env.DATABASE_URL || ''
 };

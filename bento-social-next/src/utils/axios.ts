@@ -1,7 +1,6 @@
 'use client';
 
 import axios, { AxiosRequestConfig } from 'axios';
-import { useRouter } from 'next/navigation';
 
 import { HOST_API } from '../global-config';
 
@@ -25,8 +24,8 @@ axiosInstance.interceptors.response.use(
   (error) => {
     if (error.response && error.response.status === 401) {
       if (typeof window !== 'undefined') {
-        const router = useRouter();
-        router.push('/login');
+        sessionStorage.removeItem('token');
+        window.location.href = '/login';
       }
     }
     return Promise.reject(
@@ -99,5 +98,14 @@ export const endpoints = {
 
   comment: {
     get: `${VERSION_PREFIX}/comments`,
+  },
+
+  conversation: {
+    get: `${VERSION_PREFIX}/conversations`,
+    initiate: `${VERSION_PREFIX}/conversations/initiate`,
+    messages: (roomId: string) => `${VERSION_PREFIX}/conversations/${roomId}/messages`,
+    deleteRoom: (roomId: string) => `${VERSION_PREFIX}/conversations/${roomId}`,
+    deleteMessage: (roomId: string, messageId: string) => `${VERSION_PREFIX}/conversations/${roomId}/messages/${messageId}`,
+    reactToMessage: (roomId: string, messageId: string) => `${VERSION_PREFIX}/conversations/${roomId}/messages/${messageId}/reactions`,
   },
 };

@@ -1,6 +1,5 @@
 'use client';
 import ProtectedRoute from '@/components/protected-router';
-import { PostProvider } from '@/context/post-context';
 import { ProfileProvider } from '@/context/user-context';
 import useBreakPoint from '@/hooks/use-breakpoint';
 import BottomNavigationBar from '@/layouts/bottom-navigation-bar';
@@ -34,13 +33,11 @@ export default function MainLayout({ children }: Props) {
   return (
     <ProtectedRoute>
       <ProfileProvider>
-        <PostProvider>
-          <div className="h-fit block bg-cushion md:flex relative 3xl:w-[1600px] mx-auto w-full after:absolute after:inset-0 after:z-99  after:shadow-wrapper after:pointer-events-none">
-            {isSmallScreen || <Sidebar className="bg-surface-3" />}
-            <Main>{children}</Main>
-            {isSmallScreen && !isPostShow && <BottomNavigationBar />}
-          </div>
-        </PostProvider>
+        <div className="h-fit block bg-cushion md:flex relative 3xl:w-[1600px] mx-auto w-full after:absolute after:inset-0 after:z-99  after:shadow-wrapper after:pointer-events-none">
+          {isSmallScreen || <Sidebar className="bg-surface-3" />}
+          <Main>{children}</Main>
+          {isSmallScreen && !isPostShow && <BottomNavigationBar />}
+        </div>
       </ProfileProvider>
     </ProtectedRoute>
   );

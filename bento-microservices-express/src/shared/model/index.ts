@@ -43,6 +43,20 @@ export type Paginated<E> = {
   total: number;
 };
 
+export const cursorPagingSchema = z.object({
+  cursor: z.string().optional(),
+  limit: z.coerce.number().min(1).max(100).default(20),
+  direction: z.enum(['next', 'prev']).default('next'),
+});
+export type CursorPagingDTO = z.infer<typeof cursorPagingSchema>;
+
+export type CursorPaginated<E> = {
+  data: E[];
+  nextCursor: string | null;
+  prevCursor: string | null;
+  hasMore: boolean;
+};
+
 export class PubSubMessage {
   public readonly ID: string;
   public readonly SenderID?: string;

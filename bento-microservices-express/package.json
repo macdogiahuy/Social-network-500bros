@@ -7,6 +7,12 @@
     "build": "npx tsc",
     "start": "node dist/index.js",
     "dev": "dotenv -e .env.development -- nodemon",
+    "dev:media": "dotenv -e .env.development -- nodemon --exec ts-node src/services/media/index.ts",
+    "dev:chat": "dotenv -e .env.development -- nodemon --exec ts-node src/services/chat/index.ts",
+    "dev:notification": "dotenv -e .env.development -- nodemon --exec ts-node src/services/notification/index.ts",
+    "start:media": "node dist/services/media/index.js",
+    "start:chat": "node dist/services/chat/index.js",
+    "start:notification": "node dist/services/notification/index.js",
     "seed": "ts-node src/seed/index.ts"
   },
   "keywords": [],

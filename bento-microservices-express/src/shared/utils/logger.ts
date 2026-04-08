@@ -1,51 +1,51 @@
-import chalk from 'chalk'
-import { format, createLogger, transports, type Logger as LoggerType } from 'winston'
-import { resolve } from 'path'
+import chalk from 'chalk';
+import { format, createLogger, transports, type Logger as LoggerType } from 'winston';
+import { resolve } from 'path';
 
-const errorColor = chalk.red.bold
-const warningColor = chalk.yellow.bold
-const successColor = chalk.green.bold
-const infoColor = chalk.white
+const errorColor = chalk.red.bold;
+const warningColor = chalk.yellow.bold;
+const successColor = chalk.green.bold;
+const infoColor = chalk.white;
 
-const logFolderPath = process.env['LOG_FOLDER_PATH'] ?? './logs'
-const maxLogSize = parseInt(process.env['LOG_FILE_MAX_SIZE'] ?? '10485760')
+const logFolderPath = process.env['LOG_FOLDER_PATH'] ?? './logs';
+const maxLogSize = parseInt(process.env['LOG_FILE_MAX_SIZE'] ?? '10485760');
+const isProduction = process.env.NODE_ENV === 'production';
 
 const customLevels = {
   error: 0,
   warning: 1,
   info: 2,
   success: 3
-}
+};
 
 const timestampFormat = format.timestamp({
   format: 'DD-MMM-YYYY HH:mm:ss.SSS'
-})
+});
 
-const simpleOutputFormat = format.printf((log) => {
-  return `${log['timestamp']}\t${log.level}: ${log.message}`
-})
+const jsonFormat = format.combine(
+  format.timestamp(),
+  format.json()
+);
 
 const coloredOutputFormat = format.printf((log) => {
-  let color = infoColor
+  let color = infoColor;
 
   switch (log.level) {
     case 'error':
-      color = errorColor
-      break
+      color = errorColor;
+      break;
     case 'warning':
-      color = warningColor
-      break
+      color = warningColor;
+      break;
     case 'success':
-      color = successColor
-      break
+      color = successColor;
+      break;
   }
 
-  return `${log['timestamp']}\t${color(log.message)}`
-})
+  return `${log['timestamp']}\t${color(log.message)}`;
+});
 
-const fileFormat = format.combine(timestampFormat, simpleOutputFormat)
-
-const consoleFormat = format.combine(timestampFormat, coloredOutputFormat)
+const consoleFormat = format.combine(timestampFormat, coloredOutputFormat);
 
 const logger = createLogger({
   levels: customLevels,
@@ -54,33 +54,37 @@ const logger = createLogger({
       level: 'error',
       filename: resolve(logFolderPath, 'error.log'),
       maxsize: maxLogSize,
-      format: fileFormat
+      format: jsonFormat
     }),
     new transports.File({
       level: 'success',
       filename: resolve(logFolderPath, 'combined.log'),
       maxsize: maxLogSize,
-      format: fileFormat
+      format: jsonFormat
     }),
     new transports.Console({
       level: 'success',
-      format: consoleFormat,
+      format: isProduction ? jsonFormat : consoleFormat,
       handleExceptions: true
     })
   ],
   exceptionHandlers: [
     new transports.File({
       filename: resolve(logFolderPath, 'exceptions.log'),
-      format: fileFormat
+      format: jsonFormat
     })
   ]
-})
+});
 
 const Logger = {
-  error: (message: string): LoggerType => logger.error(message),
-  warning: (message: string): LoggerType => logger.warning(message),
-  info: (message: string): LoggerType => logger.info(message),
-  success: (message: string): LoggerType => logger.log('success', message)
-}
+  error: (message: string, meta?: Record<string, unknown>): LoggerType =>
+    logger.error(message, meta),
+  warning: (message: string, meta?: Record<string, unknown>): LoggerType =>
+    logger.warning(message, meta),
+  info: (message: string, meta?: Record<string, unknown>): LoggerType =>
+    logger.info(message, meta),
+  success: (message: string, meta?: Record<string, unknown>): LoggerType =>
+    logger.log('success', message, meta)
+};
 
-export default Logger
+export default Logger;

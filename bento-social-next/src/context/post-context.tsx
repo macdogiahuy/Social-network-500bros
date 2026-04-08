@@ -1,7 +1,9 @@
 'use client';
+
 import { getPosts } from '@/apis/post';
 import { IPost } from '@/interfaces/post';
-import React from 'react';
+import React, { useCallback, useState } from 'react';
+import { useQuery, useQueryClient } from 'react-query';
 
 //--------------------------------------------------------------------------------------------
 interface PostContextType {
@@ -25,58 +27,49 @@ interface FilterType {
 
 const PostContext = React.createContext<PostContextType | undefined>(undefined);
 
-function usePostsManager(initialFilter: FilterType) {
-  const [posts, setPosts] = React.useState<IPost[]>([]);
-  const [isLoading, setIsLoading] = React.useState<boolean>(true);
-  const [error, setError] = React.useState<Error | null>(null);
-  const [filter, setFilter] = React.useState<FilterType>(initialFilter);
-
-  const fetchPosts = React.useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const response = await getPosts(filter);
-      setPosts(response.data);
-      setError(null);
-    } catch (error) {
-      console.error('Error fetching posts:', error);
-      setError(new Error('Failed to fetch posts'));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [filter]);
-
-  React.useEffect(() => {
-    fetchPosts();
-  }, [fetchPosts]);
-
-  const addPost = (newPost: IPost) => {
-    setPosts((prevPosts) => [newPost, ...prevPosts]);
-  };
-
-  const updatePostCtx = (updatedPost: IPost) => {
-    setPosts((prevPosts) =>
-      prevPosts.map((post) => (post.id === updatedPost.id ? updatedPost : post))
-    );
-  };
-
-  return {
-    posts,
-    filter,
-    setFilter,
-    addPost,
-    updatePostCtx,
-    setPosts,
-    isLoading,
-    error,
-    refreshPosts: fetchPosts,
-  };
-}
-
 export function PostProvider({ children }: { children: React.ReactNode }) {
-  const postManager = usePostsManager({});
+  const [filter, setFilter] = useState<FilterType>({});
+  const [localPosts, setLocalPosts] = useState<IPost[]>([]);
+  const queryClient = useQueryClient();
+
+  const { data, isLoading, error, refetch } = useQuery(
+    ['posts', 'feed', filter],
+    () => getPosts(filter).then((r) => r.data),
+    {
+      onSuccess: (data) => setLocalPosts(data),
+    }
+  );
+
+  const addPost = useCallback((newPost: IPost) => {
+    setLocalPosts((prev) => [newPost, ...prev]);
+  }, []);
+
+  const updatePostCtx = useCallback((updatedPost: IPost) => {
+    setLocalPosts((prev) =>
+      prev.map((post) => (post.id === updatedPost.id ? updatedPost : post))
+    );
+  }, []);
+
+  const refreshPosts = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   return (
-    <PostContext.Provider value={postManager}>{children}</PostContext.Provider>
+    <PostContext.Provider
+      value={{
+        posts: localPosts,
+        filter,
+        setFilter,
+        addPost,
+        updatePostCtx,
+        setPosts: setLocalPosts,
+        isLoading,
+        error: error as Error | null,
+        refreshPosts,
+      }}
+    >
+      {children}
+    </PostContext.Provider>
   );
 }
 

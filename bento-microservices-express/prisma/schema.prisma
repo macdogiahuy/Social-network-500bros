@@ -38,6 +38,7 @@ model Users {
   stories            Stories[]
   storyLikes         StoryLikes[]
   storyViews         StoryViews[]
+  messageReactions   ChatMessageReactions[]
   // --- Follow Relations Example ---
   // If John follows Jane:
   // Jane will appear in John's `following` list.
@@ -77,7 +78,8 @@ model ChatRooms {
   id String @id @map("id") @db.VarChar(36)
 
   // Data Fields
-  name   String?            @map("name") @db.VarChar(255) // Optional name for Group Chats
+  name   String?            @map("name") @db.VarChar(255)
+  image  String?            @map("image") @db.VarChar(512)
   type   chat_rooms_type?   @default(direct) @map("type")
   status chat_rooms_status? @default(pending) @map("status")
 
@@ -119,6 +121,10 @@ model ChatMessages {
   id        String   @id @map("id") @db.VarChar(36)
   // Data Fields
   content   String?  @map("content") @db.Text
+  fileUrl   String?  @map("file_url") @db.VarChar(512)
+  fileName  String?  @map("file_name") @db.VarChar(255)
+  fileSize  Int?     @map("file_size")
+  fileType  String?  @map("file_type") @db.VarChar(100)
   // Timestamps
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(0)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamp(0)
@@ -129,10 +135,30 @@ model ChatMessages {
   senderId String?   @map("sender_id") @db.VarChar(36)
   sender   Users?    @relation(fields: [senderId], references: [id], onDelete: SetNull)
 
+  reactions ChatMessageReactions[]
+
   // Indexes & Config
   @@index([roomId], map: "room_id")
   @@index([senderId], map: "sender_id")
+  @@index([roomId, createdAt(sort: Desc)], map: "room_created_at")
   @@map("chat_messages")
+}
+
+model ChatMessageReactions {
+  id        String   @id @map("id") @db.VarChar(36)
+  emoji     String   @map("emoji") @db.VarChar(50)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(0)
+
+  messageId String       @map("message_id") @db.VarChar(36)
+  message   ChatMessages @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  userId String @map("user_id") @db.VarChar(36)
+  user   Users  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId])
+  @@index([messageId], map: "message_id")
+  @@index([userId], map: "reaction_user_id")
+  @@map("chat_message_reactions")
 }
 
 // --- Post model ---

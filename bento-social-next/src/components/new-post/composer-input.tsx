@@ -6,11 +6,10 @@ import { z } from 'zod';
 
 import { createComment } from '@/apis/comment';
 import { createPost } from '@/apis/post';
-import { getTopics } from '@/apis/topic';
 import { usePost } from '@/context/post-context';
 import { useUserProfile } from '@/context/user-context';
+import { useTopics } from '@/hooks/queries/use-topics';
 import { IPost } from '@/interfaces/post';
-import { ITopic } from '@/interfaces/topic';
 import { CreatePost, createPostSchema } from '@/schema/posts-schema';
 
 import { Avatar } from '@/components/avatar';
@@ -45,10 +44,9 @@ export default function ComposerInput({
   const { addPost } = usePost();
   const [isInputFocused, setInputFocused] = React.useState<boolean>(false);
 
+  const { data: topics = [], isLoading: loading, error: topicError } = useTopics();
+  const error = topicError ? 'Failed load topics.' : '';
   const [selectedTopic, setSelectedTopic] = React.useState<string>('');
-  const [topics, setTopics] = React.useState<ITopic[]>([]);
-  const [loading, setLoading] = React.useState<boolean>(true);
-  const [error, setError] = React.useState<string>('');
 
   const [previewUrl, setPreviewUrl] = React.useState<string>('');
   const [uploadedImage, setUploadedImage] = React.useState<string>('');
@@ -60,19 +58,10 @@ export default function ComposerInput({
   const [isSubmitting, setIsSubmitting] = React.useState<boolean>(false);
 
   React.useEffect(() => {
-    getTopics()
-      .then((response) => {
-        setTopics(response.data);
-        setSelectedTopic(response.data[0].id);
-      })
-      .catch((error) => {
-        console.error('Error fetching topics:', error);
-        setError('Failed load topics.');
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }, []);
+    if (topics.length > 0 && !selectedTopic) {
+      setSelectedTopic(topics[0].id);
+    }
+  }, [topics, selectedTopic]);
 
   const handleSubmit = async () => {
     try {
