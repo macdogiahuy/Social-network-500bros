@@ -4,7 +4,6 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 
 import { useMessages } from '@/hooks/queries/use-conversations';
-import { useUserProfile } from '@/context/user-context';
 import { useSocket } from '@/providers/socket-provider';
 import { IChatMessage } from '@/apis/conversation';
 
@@ -24,7 +23,6 @@ export default function ConversationDetailPage({
   id,
 }: ConversationDetailPageProps) {
   const router = useRouter();
-  const { userProfile } = useUserProfile();
   const { data: messages, isLoading } = useMessages(id);
   const { socket } = useSocket();
   const [realtimeMessages, setRealtimeMessages] = React.useState<IChatMessage[]>([]);

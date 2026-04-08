@@ -3,7 +3,7 @@
 import { getPosts } from '@/apis/post';
 import { IPost } from '@/interfaces/post';
 import React, { useCallback, useState } from 'react';
-import { useQuery, useQueryClient } from 'react-query';
+import { useQuery } from 'react-query';
 
 //--------------------------------------------------------------------------------------------
 interface PostContextType {
@@ -30,9 +30,7 @@ const PostContext = React.createContext<PostContextType | undefined>(undefined);
 export function PostProvider({ children }: { children: React.ReactNode }) {
   const [filter, setFilter] = useState<FilterType>({});
   const [localPosts, setLocalPosts] = useState<IPost[]>([]);
-  const queryClient = useQueryClient();
-
-  const { data, isLoading, error, refetch } = useQuery(
+  const { isLoading, error, refetch } = useQuery(
     ['posts', 'feed', filter],
     () => getPosts(filter).then((r) => r.data),
     {
