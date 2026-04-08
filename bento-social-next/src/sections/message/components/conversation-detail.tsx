@@ -91,7 +91,7 @@ export default function ConversationDetail() {
         ))}
       </section>
 
-      <ChatInput />
+      <ChatInput roomId={String(_conversations[0].id)} />
     </section>
   );
 }
