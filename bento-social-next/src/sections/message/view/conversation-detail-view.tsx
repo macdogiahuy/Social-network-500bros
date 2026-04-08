@@ -56,7 +56,7 @@ export default function ConversationDetailPage({
         id="conversation-header"
         className="w-full flex items-center gap-4 py-3 pr-6 pl-3"
       >
-        <Avatar src={null} alt="avatar" />
+        <Avatar src={undefined} alt="avatar" />
         <Typography level="base2m" className="text-primary grow">
           Conversation
         </Typography>
