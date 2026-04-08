@@ -23,7 +23,7 @@ export const publicUserSchema = z.object({
   username: z.string(),
   firstName: z.string(),
   lastName: z.string(),
-  avatar: z.string().url(),
+  avatar: z.string().url().nullable().optional(),
 });
 
 export type PublicUser = z.infer<typeof publicUserSchema>;

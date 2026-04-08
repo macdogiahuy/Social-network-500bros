@@ -22,25 +22,27 @@ export enum Status {
   DELETED = 'deleted'
 }
 
+// TODO-LIST: Add the Gender to the Prisma Schema later 
+// Then edit this
 export const userSchema = z.object({
   id: z.string().uuid(),
-  avatar: z.string().nullable().optional(),
   cover: z.string().nullable().optional(),
-  firstName: z.string().min(2, ErrFirstNameAtLeast2Chars.message),
-  lastName: z.string().min(2, ErrLastNameAtLeast2Chars.message),
-  email: z.string().email('Invalid email format').optional(),
+  avatar: z.string().nullable().optional(),
   username: z
     .string()
     .min(3, 'Username must not be less than 3 characters')
     .max(25, 'Username must not be greater than 25 characters')
     .regex(/^[a-zA-Z0-9_]+$/, ErrUsernameInvalid.message),
+  firstName: z.string().min(2, ErrFirstNameAtLeast2Chars.message),
+  lastName: z.string().min(2, ErrLastNameAtLeast2Chars.message),
+  email: z.string().email('Invalid email format').optional(),
   password: z.string().min(6, ErrPasswordAtLeast6Chars.message),
   salt: z.string().min(8),
+  role: z.nativeEnum(UserRole, ErrRoleInvalid),
   bio: z.string().nullable().optional(),
   websiteUrl: z.string().nullable().optional(),
   followerCount: z.number().default(0).optional(),
   postCount: z.number().default(0).optional(),
-  role: z.nativeEnum(UserRole, ErrRoleInvalid),
   status: z.nativeEnum(Status).optional(),
   createdAt: z.date(),
   updatedAt: z.date()

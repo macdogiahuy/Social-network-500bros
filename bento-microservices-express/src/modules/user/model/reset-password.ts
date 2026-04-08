@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+// This is the schema for reseting the tokens
 export const resetTokenSchema = z.object({
   id: z.string().uuid(),
   userId: z.string().uuid(),
@@ -18,6 +19,7 @@ export const createResetTokenDTOSchema = resetTokenSchema.pick({
 });
 
 export type CreateResetTokenDTO = z.infer<typeof createResetTokenDTOSchema>;
+
 
 export const resetPasswordDTOSchema = z
   .object({

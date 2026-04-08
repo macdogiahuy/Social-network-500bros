@@ -41,3 +41,9 @@ Because the `Posts` table (`id`) utilizes V4 UUID strings, sorting by ID generat
   ```typescript
   orderBy: { createdAt: 'desc' }
   ```
+
+### 6. [ ] Refactor Core Interfaces for Prisma Transactions & Flexibility
+The generic interfaces in `src/shared/interface/index.ts` currently lack the ability to support robust Prisma ORM patterns required by this project.
+- **Transactions Support:** The `README.md` explicitly calls for wrapping counter updates in `$transaction`, but `ICommandRepository` completely lacks the ability to receive a transactional context. We need to optionally pass `tx?: Prisma.TransactionClient` into operations like `insert`, `update`, and `delete`.
+- **Bulk Operations:** `ICommandRepository` misses common DB operations like `insertMany`, `updateMany`, and `deleteMany`.
+- **Primary Key Constraint:** Interfaces hardcode `id: string`. If an entity has a numeric ID or a composite key, it breaks. We should introduce an `ID` generic (e.g., `interface IUseCase<..., ID = string>`).
