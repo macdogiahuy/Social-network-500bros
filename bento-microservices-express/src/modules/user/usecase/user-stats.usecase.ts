@@ -1,20 +1,6 @@
 import prisma from '@shared/components/prisma';
-import { AppError } from '@shared/utils/error';
-
-const ErrUserNotFound = AppError.from(new Error('User not found'), 404);
-
-export interface UserStats {
-  id: string;
-  username: string;
-  followerCount: number;
-  followingCount: number;
-  postCount: number;
-  totalLikes: number;
-}
-
-export interface IUserStatsUsecase {
-  getUserStats(userId: string): Promise<UserStats>;
-}
+import { ErrUserNotFound } from '@shared/utils/error';
+import { IUserStatsUsecase, UserStats } from '../interface';
 
 export class UserStatsUsecase implements IUserStatsUsecase {
   async getUserStats(userId: string): Promise<UserStats> {
@@ -27,36 +13,31 @@ export class UserStatsUsecase implements IUserStatsUsecase {
       throw ErrUserNotFound;
     }
 
-    // Get the count of users who follow this user
-    const followerCount = await prisma.followers.count({
-      where: { followingId: userId }
-    });
-
-    // Get the count of users this user follows
-    const followingCount = await prisma.followers.count({
-      where: { followerId: userId }
-    });
-
-    // Get the count of posts by this user
-    const postCount = await prisma.posts.count({
-      where: { authorId: userId }
-    });
-
-    // Get the total number of likes received on all posts
-    const posts = await prisma.posts.findMany({
-      where: { authorId: userId },
-      select: { id: true }
-    });
+    const [followerCount, followingCount, postCount, posts] = await Promise.all([
+      prisma.follow.count({
+        where: { followingId: userId }
+      }),
+      prisma.follow.count({
+        where: { followerId: userId }
+      }),
+      prisma.posts.count({
+        where: { authorId: userId }
+      }),
+      prisma.posts.findMany({
+        where: { authorId: userId },
+        select: { id: true }
+      })
+    ]);
 
     const postIds = posts.map((post) => post.id);
 
-    const totalLikes = await prisma.postLikes.count({
-      where: {
-        postId: {
-          in: postIds
-        }
-      }
-    });
+    const totalLikes = postIds.length > 0
+      ? await prisma.postLikes.count({
+          where: {
+            postId: { in: postIds }
+          }
+        })
+      : 0;
 
     return {
       id: user.id,

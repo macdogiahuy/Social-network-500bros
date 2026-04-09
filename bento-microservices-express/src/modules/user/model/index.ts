@@ -75,6 +75,7 @@ export const userUpdateDTOSchema = userSchema
     cover: true,
     firstName: true,
     lastName: true,
+    email: true,
     password: true,
     bio: true,
     websiteUrl: true,
@@ -99,6 +100,7 @@ export const userCondDTOSchema = userSchema
     firstName: true,
     lastName: true,
     username: true,
+    email: true,
     role: true,
     status: true
   })

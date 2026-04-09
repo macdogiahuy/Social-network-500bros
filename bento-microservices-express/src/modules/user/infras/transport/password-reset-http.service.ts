@@ -1,6 +1,6 @@
 import { successResponse } from '@shared/utils/utils';
 import { Request, Response } from 'express';
-import { IPasswordResetUsecase } from '../../usecase/password-reset.usecase';
+import { IPasswordResetUsecase } from '../../interface';
 
 export class PasswordResetHttpService {
   constructor(private readonly usecase: IPasswordResetUsecase) {}

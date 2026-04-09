@@ -1,7 +1,7 @@
 import { successResponse } from '@shared/utils/utils';
 import { pickParam } from '@shared/utils/request';
 import { Request, Response } from 'express';
-import { IUserStatsUsecase } from '../../usecase/user-stats.usecase';
+import { IUserStatsUsecase } from '../../interface';
 
 export class UserStatsHttpService {
   constructor(private readonly usecase: IUserStatsUsecase) {}

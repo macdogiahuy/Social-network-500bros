@@ -137,3 +137,11 @@ export const ErrNotFound = AppError.from(new Error('Not found'), 404);
 export const ErrMethodNotAllowed = AppError.from(new Error('Method not allowed'), 405);
 export const ErrTokenInvalid = AppError.from(new Error('Token is invalid'), 401);
 
+// User-specific errors
+export const ErrUsernameExisted = AppError.from(new Error('Username is already existed'), 400);
+export const ErrInvalidUsernameAndPassword = AppError.from(new Error('Invalid username or password'), 400);
+export const ErrUserInactivated = AppError.from(new Error('User account is inactive or banned'), 403);
+export const ErrInvalidToken = AppError.from(new Error('Invalid or expired token'), 401);
+export const ErrEmailNotSent = AppError.from(new Error('Failed to send email'), 500);
+export const ErrUserNotFound = AppError.from(new Error('User not found'), 404);
+

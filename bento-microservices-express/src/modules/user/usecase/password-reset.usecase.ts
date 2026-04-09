@@ -1,10 +1,10 @@
-import { IRepository } from '@shared/interface';
-import { AppError } from '@shared/utils/error';
-import bcrypt from 'bcrypt';
+import { ErrUserNotFound, ErrInvalidToken, ErrEmailNotSent, ErrForbidden } from '@shared/utils/error';
 import crypto from 'crypto';
 import { IResetTokenRepository } from '../infras/repository/reset-token.repository';
 import { IEmailService } from '../infras/services/email.service';
-import { User, UserCondDTO, UserUpdateDTO } from '../model';
+import { IUserUseCase } from '../interface';
+import { IPasswordResetUsecase } from '../interface';
+import { Status } from '../model';
 import {
   RequestResetDTO,
   requestResetDTOSchema,
@@ -12,33 +12,27 @@ import {
   resetPasswordDTOSchema
 } from '../model/reset-password';
 
-// Define error constants
-const ErrUserNotFound = AppError.from(new Error('User not found'), 404);
-const ErrInvalidToken = AppError.from(new Error('Invalid or expired token'), 400);
-const ErrEmailNotSent = AppError.from(new Error('Failed to send email'), 500);
-
-export interface IPasswordResetUsecase {
-  requestReset(data: RequestResetDTO): Promise<boolean>;
-  resetPassword(data: ResetPasswordDTO): Promise<boolean>;
-}
-
 export class PasswordResetUsecase implements IPasswordResetUsecase {
   constructor(
     private readonly resetTokenRepo: IResetTokenRepository,
     private readonly emailService: IEmailService,
-    private readonly userRepo: IRepository<User, UserCondDTO, UserUpdateDTO>
+    private readonly userUseCase: IUserUseCase
   ) {}
 
   async requestReset(data: RequestResetDTO): Promise<boolean> {
     const dto = requestResetDTOSchema.parse(data);
 
-    // Find user by email - we'll need custom logic since email is not in the UserCondDTO
-    // This would be better handled with a direct query in a real implementation
-    const users = await this.userRepo.list({}, { page: 1, limit: 1000 });
-    const user = users.data.find((u) => u.email === dto.email);
+    // Find user by email
+    const users = await this.userUseCase.list({ email: dto.email }, { page: 1, limit: 1 });
+    const user = users.data[0];
 
     if (!user) {
       throw ErrUserNotFound;
+    }
+
+    // Only allow active users to request password reset
+    if (user.status !== Status.ACTIVE) {
+      throw ErrForbidden.withMessage('Cannot reset password for inactive user');
     }
 
     // Generate a secure token
@@ -55,7 +49,11 @@ export class PasswordResetUsecase implements IPasswordResetUsecase {
     });
 
     // Send email with reset token
-    const emailSent = await this.emailService.sendPasswordResetEmail(user.email as string, resetToken);
+    if (!user.email) {
+      throw ErrEmailNotSent.withMessage('User has no email address');
+    }
+
+    const emailSent = await this.emailService.sendPasswordResetEmail(user.email, resetToken);
 
     if (!emailSent) {
       throw ErrEmailNotSent;
@@ -74,25 +72,18 @@ export class PasswordResetUsecase implements IPasswordResetUsecase {
       throw ErrInvalidToken;
     }
 
-    // Find user
-    const user = await this.userRepo.findById(resetToken.userId);
+    // Find user (throws ErrNotFound if not found or deleted)
+    await this.userUseCase.getDetail(resetToken.userId);
 
-    if (!user) {
-      throw ErrUserNotFound;
-    }
+    // Hash the new password using shared method
+    const { hash, salt } = await this.userUseCase.hashPassword(dto.password);
 
-    // Hash the new password
-    const salt = bcrypt.genSaltSync(8);
-    const hashPassword = await bcrypt.hash(`${dto.password}.${salt}`, 10);
-
-    // Update user password
-    await this.userRepo.update(user.id, {
-      password: hashPassword,
-      salt
-    });
-
-    // Mark token as used
-    await this.resetTokenRepo.markAsUsed(resetToken.id);
+    // Update user password and invalidate all existing tokens
+    await Promise.all([
+      this.userUseCase.update(resetToken.userId, { password: hash, salt }),
+      this.resetTokenRepo.invalidateUserTokens(resetToken.userId),
+      this.resetTokenRepo.markAsUsed(resetToken.id)
+    ]);
 
     return true;
   }

@@ -7,15 +7,12 @@
     "build": "npx tsc",
     "start": "node dist/index.js",
     "dev": "dotenv -e .env.development -- nodemon",
-<<<<<<< HEAD
-=======
     "dev:media": "dotenv -e .env.development -- nodemon --exec ts-node src/services/media/index.ts",
     "dev:chat": "dotenv -e .env.development -- nodemon --exec ts-node src/services/chat/index.ts",
     "dev:notification": "dotenv -e .env.development -- nodemon --exec ts-node src/services/notification/index.ts",
     "start:media": "node dist/services/media/index.js",
     "start:chat": "node dist/services/chat/index.js",
     "start:notification": "node dist/services/notification/index.js",
->>>>>>> origin/refactor-post
     "seed": "ts-node src/seed/index.ts"
   },
   "keywords": [],
@@ -35,7 +32,7 @@
     "axios": "^1.7.7",
     "bcrypt": "^5.1.1",
     "chalk": "^4.1.2",
-    "cloudinary": "^2.9.0",
+    "cloudinary": "^2.5.1",
     "compression": "^1.7.4",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
@@ -55,12 +52,8 @@
     "zod": "^3.23.8"
   },
   "engines": {
-<<<<<<< HEAD
     "node": "20.19.0",
     "pnpm": ">=9.0.0"
-=======
-    "node": "20.19.0"
->>>>>>> origin/refactor-post
   },
   "packageManager": "pnpm@9.12.1+sha512.e5a7e52a4183a02d5931057f7a0dbff9d5e9ce3161e33fa68ae392125b79282a8a8a470a51dfc8a0ed86221442eb2fb57019b0990ed24fab519bf0e1bc5ccfc4",
   "devDependencies": {

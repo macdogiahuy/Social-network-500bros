@@ -6,7 +6,7 @@ import { Paginated, PagingDTO } from '@shared/model';
 export class MysqlFollowingRepository implements IFollowingRepository {
 
   async insert(follow: Follow): Promise<boolean> {
-    await prisma.followers.create({
+    await prisma.follow.create({
       data: follow
     });
 
@@ -14,7 +14,7 @@ export class MysqlFollowingRepository implements IFollowingRepository {
   }
 
   async delete(follow: FollowDTO): Promise<boolean> {
-    await prisma.followers.delete({
+    await prisma.follow.delete({
       where: {
         followingId_followerId: {
           followerId: follow.followerId,
@@ -27,7 +27,7 @@ export class MysqlFollowingRepository implements IFollowingRepository {
   }
 
   async find(cond: FollowDTO): Promise<Follow | null> {
-    const result = await prisma.followers.findFirst({
+    const result = await prisma.follow.findFirst({
       where: cond
     });
 
@@ -35,7 +35,7 @@ export class MysqlFollowingRepository implements IFollowingRepository {
   }
 
   async whoAmIFollowing(followingId: string, ids: string[]): Promise<Follow[]> {
-    const result = await prisma.followers.findMany({
+    const result = await prisma.follow.findMany({
       where: {
         followingId: {
           in: ids
@@ -48,12 +48,12 @@ export class MysqlFollowingRepository implements IFollowingRepository {
   }
 
   async list(cond: FollowCondDTO, paging: PagingDTO): Promise<Paginated<Follow>> {
-    const count = await prisma.followers.count({
+    const count = await prisma.follow.count({
       where: cond
     });
 
     const skip = (paging.page - 1) * paging.limit;
-    const result = await prisma.followers.findMany({
+    const result = await prisma.follow.findMany({
       where: cond,
       skip,
       take: paging.limit,

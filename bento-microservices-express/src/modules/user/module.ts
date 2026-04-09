@@ -23,7 +23,7 @@ export const setupUserModule = (sctx: ServiceContext) => {
   // Password reset setup
   const resetTokenRepo = new PrismaResetTokenRepository();
   const emailService = new EmailService();
-  const passwordResetUsecase = new PasswordResetUsecase(resetTokenRepo, emailService, repository);
+  const passwordResetUsecase = new PasswordResetUsecase(resetTokenRepo, emailService, useCase);
   const passwordResetHttpService = new PasswordResetHttpService(passwordResetUsecase);
 
   // User stats setup
