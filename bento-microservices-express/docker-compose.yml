@@ -1,5 +1,4 @@
-# Secrets are loaded from startup/.env via env_file — nothing hardcoded here
-version: '3'
+version: '3.8'
 
 services:
   mysql:
@@ -15,53 +14,120 @@ services:
     networks:
       - social
     healthcheck:
-      test: [ "CMD-SHELL", "mysqladmin ping -h localhost -u root -p${MYSQL_ROOT_PASSWORD} --silent" ]
+      test: ['CMD-SHELL', 'mysqladmin ping -h localhost -u root -p${MYSQL_ROOT_PASSWORD} --silent']
       interval: 30s
       timeout: 20s
       retries: 10
       start_period: 30s
-    stop_grace_period: 30s
-    ulimits:
-      nofile:
-        soft: 20000
-        hard: 40000
     command: >
       --performance_schema=OFF --innodb_buffer_pool_size=256M --innodb_log_file_size=64M --max_connections=100 --thread_cache_size=50
 
   redis:
-    image: redis:6.0
-    container_name: redis
+    image: redis:7-alpine
+    container_name: redis-bento
     restart: always
     ports:
       - '${REDIS_PORT:-6379}:6379'
     volumes:
       - redis-bento:/data
-      - type: bind
-        source: ./redis/redis.conf
-        target: /usr/local/etc/redis/redis.conf
-        read_only: true
     env_file:
-      - .env # reads REDIS_PASSWORD from one place
+      - .env
     networks:
       - social
     deploy:
       resources:
         limits:
           memory: 256M
-          cpus: '0.3'
-        reservations:
-          memory: 128M
-          cpus: '0.1'
     command: redis-server --requirepass ${REDIS_PASSWORD} --maxmemory 256mb --maxmemory-policy allkeys-lru
-    stop_grace_period: 10s
-    ulimits:
-      nofile:
-        soft: 10000
-        hard: 20000
+
+  # --- Monolith (default mode) ---
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: api-gateway
+    restart: always
+    ports:
+      - '${PORT:-3000}:3000'
+    env_file:
+      - .env
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - social
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -f http://localhost:3000/health || exit 1']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # --- Microservices (uncomment to run individually) ---
+  # media-service:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #     args:
+  #       SERVICE_ENTRY: src/services/media/index.ts
+  #   container_name: media-service
+  #   restart: always
+  #   ports:
+  #     - '3005:3005'
+  #   env_file:
+  #     - .env
+  #   environment:
+  #     - MEDIA_SERVICE_PORT=3005
+  #   networks:
+  #     - social
+
+  # chat-service:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #     args:
+  #       SERVICE_ENTRY: src/services/chat/index.ts
+  #   container_name: chat-service
+  #   restart: always
+  #   ports:
+  #     - '3003:3003'
+  #   env_file:
+  #     - .env
+  #   environment:
+  #     - CHAT_SERVICE_PORT=3003
+  #   depends_on:
+  #     mysql:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_started
+  #   networks:
+  #     - social
+
+  # notification-service:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #     args:
+  #       SERVICE_ENTRY: src/services/notification/index.ts
+  #   container_name: notification-service
+  #   restart: always
+  #   ports:
+  #     - '3004:3004'
+  #   env_file:
+  #     - .env
+  #   environment:
+  #     - NOTIFICATION_SERVICE_PORT=3004
+  #   depends_on:
+  #     mysql:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_started
+  #   networks:
+  #     - social
 
 networks:
   social:
-
 
 volumes:
   social_mysql:

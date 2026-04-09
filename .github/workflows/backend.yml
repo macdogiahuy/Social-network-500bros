@@ -1,0 +1,52 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [main, refactor-post, long-dev]
+    paths:
+      - 'bento-microservices-express/**'
+      - '.github/workflows/backend.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'bento-microservices-express/**'
+
+defaults:
+  run:
+    working-directory: bento-microservices-express
+
+jobs:
+  lint-and-build:
+    name: Lint & Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'yarn'
+          cache-dependency-path: bento-microservices-express/yarn.lock
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Build TypeScript
+        run: yarn build
+
+  docker-build:
+    name: Docker Build Check
+    runs-on: ubuntu-latest
+    needs: lint-and-build
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t 500bros-api:${{ github.sha }} .
+        working-directory: bento-microservices-express

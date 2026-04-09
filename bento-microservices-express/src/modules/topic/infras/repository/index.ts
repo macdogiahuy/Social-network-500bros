@@ -1,5 +1,6 @@
 import { ITopicRepository } from '@modules/topic/interface/interface';
 import { Topic, TopicCondDTO, TopicUpdateDTO } from '@modules/topic/model/topic';
+import { Prisma } from '@prisma/client';
 import prisma from '@shared/components/prisma';
 import { Paginated, PagingDTO } from '@shared/model';
 
@@ -53,19 +54,23 @@ export class PrismaTopicRepository implements ITopicRepository {
   async search(query: string, paging: PagingDTO): Promise<Paginated<Topic>> {
     const skip = (paging.page - 1) * paging.limit;
 
-    // Convert query to lowercase for case-insensitive search
-    const lowerQuery = query.toLowerCase();
+    const where: any = {
+      name: {
+        contains: query,
+        mode: 'insensitive'
+      }
+    };
 
-    // First get all topics
-    const allTopics = await prisma.topics.findMany();
+    const total = await prisma.topics.count({ where });
 
-    // Filter topics where name contains the query (case-insensitive)
-    const filteredTopics = allTopics.filter((topic) => topic.name.toLowerCase().includes(lowerQuery));
-
-    const total = filteredTopics.length;
-
-    // Apply pagination manually
-    const data = filteredTopics.sort((a, b) => a.name.localeCompare(b.name)).slice(skip, skip + paging.limit);
+    const data = await prisma.topics.findMany({
+      where,
+      take: paging.limit,
+      skip,
+      orderBy: {
+        name: 'asc'
+      }
+    });
 
     return {
       data: data as Topic[],

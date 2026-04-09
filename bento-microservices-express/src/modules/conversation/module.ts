@@ -1,9 +1,13 @@
 import { ServiceContext } from '@shared/interface';
 import { Router } from 'express';
-import conversationRoutes from './conversation.route';
+import { MysqlConversationRepository } from './infras/repository/mysql';
+import { ConversationHttpService } from './infras/transport/http-service';
+import { ConversationUseCase } from './usecase/conversation.usecase';
 
 export function setupConversationModule(ctx: ServiceContext): Router {
-  const router = Router();
-  router.use('/conversations', ctx.mdlFactory.auth, conversationRoutes);
-  return router;
+  const repository = new MysqlConversationRepository();
+  const useCase = new ConversationUseCase(repository, ctx.eventPublisher);
+  const httpService = new ConversationHttpService(useCase);
+
+  return httpService.getRoutes(ctx.mdlFactory);
 }

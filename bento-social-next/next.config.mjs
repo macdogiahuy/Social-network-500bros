@@ -28,6 +28,14 @@ const nextConfig = {
         hostname: '**.onrender.com',
         pathname: '/uploads/**',
       },
+<<<<<<< HEAD
+=======
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+        pathname: '/**',
+      },
+>>>>>>> origin/refactor-post
     ],
   },
 };

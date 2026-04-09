@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { QueryClient, QueryClientProvider } from 'react-query';
 
 type Props = {
@@ -7,13 +8,18 @@ type Props = {
 };
 
 export default function QueryProvider({ children }: Props) {
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: {
-        refetchOnWindowFocus: false, // default: true
-      },
-    },
-  });
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            refetchOnWindowFocus: false,
+            retry: 1,
+            staleTime: 30_000,
+          },
+        },
+      })
+  );
 
   return (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>

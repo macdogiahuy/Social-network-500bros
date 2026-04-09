@@ -15,6 +15,7 @@ import { setupUserConsumer, setupUserModule } from '@modules/user/module';
 import { config } from '@shared/components/config';
 import prisma from '@shared/components/prisma';
 import { RedisClient } from '@shared/components/redis-pubsub/redis';
+import { RedisCache } from '@shared/components/redis-cache';
 import { SocketService } from '@shared/components/socket/socket.service';
 import { ServiceContext } from '@shared/interface';
 import { TokenIntrospectRPCClient } from '@shared/rpc/verify-token';
@@ -24,6 +25,7 @@ import { NextFunction, Request, Response, static as serveStatic } from 'express'
 import { createServer } from 'http';
 import path from 'path';
 import app from './app';
+import migrationRoute from '@modules/migration/migration.route';
 import { setupMiddlewares } from './shared/middleware/index';
 
 async function bootServer(port: number) {
@@ -35,15 +37,10 @@ async function bootServer(port: number) {
 
     const connectionUrl = config.redis.url as string;
     await RedisClient.init(connectionUrl);
+    await RedisCache.init(connectionUrl);
 
     await prisma.$connect();
     Logger.success('Prisma connected to database');
-
-    // error handling
-    app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-      responseErr(err, res);
-      return next();
-    });
 
     const serviceCtx: ServiceContext = {
       mdlFactory: MdlFactory,
@@ -75,11 +72,10 @@ async function bootServer(port: number) {
     app.use('/v1', conversationModule);
 
     app.use('/uploads', serveStatic(path.join(__dirname, '../uploads')));
+    app.use('/v1', migrationRoute);
 
-    // error handling
-    app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+    app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
       responseErr(err, res);
-      return next();
     });
 
     // setup redis consumer

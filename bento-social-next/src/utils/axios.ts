@@ -25,8 +25,13 @@ axiosInstance.interceptors.response.use(
   (error) => {
     if (error.response && error.response.status === 401) {
       if (typeof window !== 'undefined') {
+<<<<<<< HEAD
         const router = useRouter();
         router.push('/login');
+=======
+        sessionStorage.removeItem('token');
+        window.location.href = '/login';
+>>>>>>> origin/refactor-post
       }
     }
     return Promise.reject(
@@ -99,5 +104,17 @@ export const endpoints = {
 
   comment: {
     get: `${VERSION_PREFIX}/comments`,
+<<<<<<< HEAD
+=======
+  },
+
+  conversation: {
+    get: `${VERSION_PREFIX}/conversations`,
+    initiate: `${VERSION_PREFIX}/conversations/initiate`,
+    messages: (roomId: string) => `${VERSION_PREFIX}/conversations/${roomId}/messages`,
+    deleteRoom: (roomId: string) => `${VERSION_PREFIX}/conversations/${roomId}`,
+    deleteMessage: (roomId: string, messageId: string) => `${VERSION_PREFIX}/conversations/${roomId}/messages/${messageId}`,
+    reactToMessage: (roomId: string, messageId: string) => `${VERSION_PREFIX}/conversations/${roomId}/messages/${messageId}/reactions`,
+>>>>>>> origin/refactor-post
   },
 };

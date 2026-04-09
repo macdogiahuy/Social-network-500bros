@@ -3,11 +3,10 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 
-import { getTopics } from '@/apis/topic';
-import { getPosts } from '@/apis/post';
+import { usePosts } from '@/hooks/queries/use-posts';
+import { useTopics } from '@/hooks/queries/use-topics';
 
 import { IPost } from '@/interfaces/post';
-import { ITopic } from '@/interfaces/topic';
 
 import { SplashScreen } from '@/components/loading-screen';
 import { Button } from '@/components/button';
@@ -24,51 +23,18 @@ import ExploreCard from '../explore-card';
 export default function ExploreView() {
   const router = useRouter();
   const [searchStr, setSearchStr] = React.useState<string>('');
-  const [topics, setTopics] = React.useState<string[]>([]);
-  const [posts, setPosts] = React.useState<IPost[]>([]);
-  const [filteredPosts, setFilteredPosts] = React.useState<IPost[]>(posts);
-  const [isLoading, setIsLoading] = React.useState<boolean>(true);
-  const [error, setError] = React.useState<Error | null>(null);
+  const [selectedTag, setSelectedTag] = React.useState<string>('All');
 
-  React.useEffect(() => {
-    (async () => {
-      try {
-        const response = await getPosts({ str: searchStr, type: 'media' });
-        setPosts(response.data);
-        setFilteredPosts(response.data);
-        setIsLoading(false);
-      } catch (error) {
-        console.error('Error fetching posts:', error);
-        setError(new Error('Failed to fetch posts'));
-      }
-    })();
-  }, [searchStr]);
+  const { data: posts = [], isLoading, error } = usePosts({ str: searchStr, type: 'media' });
+  const { data: topicsData } = useTopics();
+  const topics = ['All', ...(topicsData?.map((t) => t.name) ?? [])];
 
-  React.useEffect(() => {
-    const fetchTopics = async () => {
-      try {
-        const response = await getTopics();
-
-        const topicNames = response.data.map((topic: ITopic) => topic.name);
-        setTopics(['All', ...topicNames]);
-      } catch (error) {
-        console.error('Error fetching topics:', error);
-      } finally {
-      }
-    };
-
-    fetchTopics();
-  }, []);
+  const filteredPosts = selectedTag === 'All'
+    ? posts
+    : posts.filter((post) => post.topic.name === selectedTag);
 
   const handleTagSelect = (tag: string) => {
-    if (tag === 'All') {
-      setFilteredPosts(posts);
-    } else {
-      const topicFilteredPosts = posts.filter(
-        (post) => post.topic.name === tag
-      );
-      setFilteredPosts(topicFilteredPosts);
-    }
+    setSelectedTag(tag);
   };
 
   return (
@@ -89,7 +55,7 @@ export default function ExploreView() {
       {isLoading ? (
         <SplashScreen />
       ) : error ? (
-        <p>Error: {error.message}</p>
+        <p>Error: {(error as Error).message}</p>
       ) : filteredPosts.length === 0 || posts.length === 0 ? (
         <EmptyContent
           content={

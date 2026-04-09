@@ -1,15 +1,15 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import useBreakpoint from '@/hooks/use-breakpoint';
 
 import {
-  getNotifications,
   readAllNotifications,
   readNotification,
 } from '@/apis/notification';
+import { useNotifications } from '@/hooks/queries/use-notifications';
 import { IAction, INotification } from '@/interfaces/notification';
 
 import { AppBar } from '@/components/appbar';
@@ -33,34 +33,21 @@ const TABITEMS = [
 export default function NotificationsView() {
   const { breakpoint } = useBreakpoint();
   const [activeTab, setActiveTab] = useState(() => TABITEMS[0].key);
-  const [notification, setNotification] = useState<INotification[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [localNotifications, setLocalNotifications] = useState<INotification[]>([]);
 
   const router = useRouter();
 
-  useEffect(() => {
-    const fetchNotifications = async () => {
-      setLoading(true);
-      try {
-        const data = await getNotifications();
-        setNotification(data.data.reverse());
-      } catch (error) {
-        console.error('Failed to load notifications:', error);
-        setError('Failed to load notifications.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchNotifications();
-  }, []);
+  const { data: notifications, isLoading: loading, error: queryError } = useNotifications();
+  const error = queryError ? 'Failed to load notifications.' : null;
+
+  const notification = localNotifications.length > 0
+    ? localNotifications
+    : [...(notifications ?? [])].reverse();
 
   const handleReadAll = async () => {
     try {
       await readAllNotifications();
-      setNotification((prevNotifications) =>
-        prevNotifications.map((n) => ({ ...n, isRead: true }))
-      );
+      setLocalNotifications(notification.map((n) => ({ ...n, isRead: true })));
     } catch (error) {
       console.error('Failed to mark all notifications as read', error);
     }
@@ -69,9 +56,7 @@ export default function NotificationsView() {
   const handleReadSingle = async (id: string) => {
     try {
       await readNotification(id);
-      setNotification((prevNotifications) =>
-        prevNotifications.map((n) => (n.id === id ? { ...n, isRead: true } : n))
-      );
+      setLocalNotifications(notification.map((n) => (n.id === id ? { ...n, isRead: true } : n)));
     } catch (error) {
       console.error('Failed to mark notification as read:', error);
     }

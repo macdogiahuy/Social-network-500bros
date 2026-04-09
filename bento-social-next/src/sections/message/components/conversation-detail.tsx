@@ -91,7 +91,11 @@ export default function ConversationDetail() {
         ))}
       </section>
 
+<<<<<<< HEAD
       <ChatInput />
+=======
+      <ChatInput roomId={String(_conversations[0].id)} />
+>>>>>>> origin/refactor-post
     </section>
   );
 }

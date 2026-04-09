@@ -30,21 +30,20 @@ export class MysqlCommentRepository implements ICommentRepository {
   }
 
   async findByIds(ids: string[], field: string, limit?: number): Promise<Array<Comment>> {
-    const sql = ids
-      .map((id) => `(SELECT * FROM comments WHERE ${field} = '${id}' ORDER BY id ASC LIMIT ${limit})`)
-      .join(' UNION ');
-    const replies = await prisma.$queryRawUnsafe<any[]>(sql);
-    return replies.map((item) => ({
-      id: item.id,
-      userId: item.user_id,
-      postId: item.post_id,
-      parentId: item.parent_id,
-      content: item.content,
-      likedCount: item.liked_count,
-      replyCount: item.reply_count,
+    const where: Record<string, any> = {
+      [field]: { in: ids }
+    };
+
+    const results = await prisma.comments.findMany({
+      where,
+      orderBy: { id: 'asc' },
+      ...(limit ? { take: limit * ids.length } : {})
+    });
+
+    return results.map((item) => ({
+      ...item,
       status: item.status as commentStatus,
-      createdAt: item.created_at,
-      updatedAt: item.updated_at
+      updatedAt: item.updatedAt!
     }));
   }
 
