@@ -1,5 +1,5 @@
 import { ICommandRepository, IRepository, IUseCase, Requester, TokenPayload } from "@shared/interface";
-import { User, UserCondDTO, UserLoginDTO, UserRegistrationDTO, UserUpdateDTO } from "../model";
+import { User, UserCondDTO, UserLoginDTO, UserRegistrationDTO, UserStatsDTO, UserUpdateDTO } from "../model";
 import { RequestResetDTO, ResetPasswordDTO } from "../model/reset-password";
 
 /**
@@ -24,13 +24,24 @@ export interface IUserUseCase extends IUseCase<UserRegistrationDTO, UserUpdateDT
   login(data: UserLoginDTO): Promise<string>;
 
   /**
-   * Registers a new user account into the system and returns a JWT access token.
-   * Flow: validate input → check username uniqueness → hash password → create user → generate JWT
+   * Registers a new user account into the system and returns a verification token.
+   * Flow: validate input → check username uniqueness → hash password → create user (PENDING) → send verification email
    * @param data User registration details
-   * @returns JWT access token string
+   * @returns Verification token (sent to user's email)
    * @throws ErrUsernameExisted if username already exists
    */
   register(data: UserRegistrationDTO): Promise<string>;
+
+  /**
+   * Verifies user's email address and sends welcome email.
+   * User must be in PENDING status (unverified).
+   * @param verifyToken The verification token (JWT) from email
+   * @returns True if verification successful
+   * @throws ErrInvalidToken if token is invalid
+   * @throws ErrNotFound if user not found
+   * @throws ErrUserInactivated if user is not in pending status
+   */
+  verifyEmail(verifyToken: string): Promise<boolean>;
 
   /**
    * Fetches a user's detailed profile securely by their unique ID.
@@ -116,18 +127,6 @@ export interface IPasswordResetUsecase {
   resetPassword(data: ResetPasswordDTO): Promise<boolean>;
 }
 
-/**
- * User Statistics Data Transfer Object.
- * Contains aggregated stats for a user's profile.
- */
-export interface UserStats {
-  id: string;
-  username: string;
-  followerCount: number;
-  followingCount: number;
-  postCount: number;
-  totalLikes: number;
-}
 
 /**
  * User Stats Use Case Interface.
@@ -138,10 +137,10 @@ export interface IUserStatsUsecase {
    * Retrieves aggregated statistics for a user.
    * Queries follower count, following count, post count, and total likes received.
    * @param userId The ID of the user
-   * @returns UserStats object with aggregated data
+   * @returns UserStatsDTO object with aggregated data
    * @throws ErrUserNotFound if user not found
    */
-  getUserStats(userId: string): Promise<UserStats>;
+  getUserStats(userId: string): Promise<UserStatsDTO>;
 }
 
 

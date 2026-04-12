@@ -67,6 +67,12 @@ export class UserHTTPService extends BaseHttpService<User, UserRegistrationDTO, 
     successResponse(result, res);
   }
 
+  async verifyEmailAPI(req: Request, res: Response) {
+    const { token } = req.body;
+    const result = await this.usecase.verifyEmail(token);
+    successResponse(result, res);
+  }
+
   async getDetailAPI(req: Request, res: Response) {
     const id = pickParam(req.params.id);
     const result = await this.usecase.getDetail(id);

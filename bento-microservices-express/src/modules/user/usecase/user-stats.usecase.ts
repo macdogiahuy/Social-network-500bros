@@ -1,9 +1,10 @@
 import prisma from '@shared/components/prisma';
 import { ErrUserNotFound } from '@shared/utils/error';
-import { IUserStatsUsecase, UserStats } from '../interface';
+import { IUserStatsUsecase } from '../interface';
+import { UserStatsDTO } from '../model';
 
 export class UserStatsUsecase implements IUserStatsUsecase {
-  async getUserStats(userId: string): Promise<UserStats> {
+  async getUserStats(userId: string): Promise<UserStatsDTO> {
     // Get the user
     const user = await prisma.users.findUnique({
       where: { id: userId }

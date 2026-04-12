@@ -14,8 +14,7 @@ export enum Gender {
   UNKNOWN = 'unknown'
 }
 
-export enum Status {
-  ACTIVE = 'active',
+export enum Status { ACTIVE = 'active',
   PENDING = 'pending',
   INACTIVE = 'inactive',
   BANNED = 'banned',
@@ -35,7 +34,7 @@ export const userSchema = z.object({
     .regex(/^[a-zA-Z0-9_]+$/, ErrUsernameInvalid.message),
   firstName: z.string().min(2, ErrFirstNameAtLeast2Chars.message),
   lastName: z.string().min(2, ErrLastNameAtLeast2Chars.message),
-  email: z.string().email('Invalid email format').optional(),
+  email: z.string().email('Invalid email format'),
   password: z.string().min(6, ErrPasswordAtLeast6Chars.message),
   salt: z.string().min(8),
   role: z.nativeEnum(UserRole, ErrRoleInvalid),
@@ -54,6 +53,7 @@ export const userRegistrationDTOSchema = userSchema
   .pick({
     firstName: true,
     lastName: true,
+    email: true,
     username: true,
     password: true
   })
@@ -69,6 +69,8 @@ export const userLoginDTOSchema = userSchema
 export type UserRegistrationDTO = z.infer<typeof userRegistrationDTOSchema>;
 export type UserLoginDTO = z.infer<typeof userLoginDTOSchema>;
 
+// This is the section of update the user for both roles (ADMIN and USER)
+// ADMIN UPDATE
 export const userUpdateDTOSchema = userSchema
   .pick({
     avatar: true,
@@ -84,9 +86,9 @@ export const userUpdateDTOSchema = userSchema
     status: true
   })
   .partial();
-
 export type UserUpdateDTO = z.infer<typeof userUpdateDTOSchema>;
 
+// USER UPDATE
 // Don't allow update role and status
 export const userUpdateProfileDTOSchema = userUpdateDTOSchema
   .omit({
@@ -94,7 +96,11 @@ export const userUpdateProfileDTOSchema = userUpdateDTOSchema
     status: true
   })
   .partial();
+// This is for the User Update profile (Not role and status)
+export type UserUpdateProfileDTO = z.infer<typeof userUpdateProfileDTOSchema>;
 
+
+// QUERYING THE USER
 export const userCondDTOSchema = userSchema
   .pick({
     firstName: true,
@@ -105,6 +111,16 @@ export const userCondDTOSchema = userSchema
     status: true
   })
   .partial();
-
 export type UserCondDTO = z.infer<typeof userCondDTOSchema>;
-export type UserUpdateProfileDTO = z.infer<typeof userUpdateProfileDTOSchema>;
+
+
+export const userStatsSchema = z.object({
+  id: z.string().uuid(),
+  username: z.string(),
+  followerCount: z.number(),
+  followingCount: z.number(),
+  postCount: z.number(),
+  totalLikes: z.number()
+});
+
+export type UserStatsDTO = z.infer<typeof userStatsSchema>;

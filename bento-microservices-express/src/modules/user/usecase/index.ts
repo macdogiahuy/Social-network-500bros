@@ -5,6 +5,7 @@ import { AppError, ErrNotFound, ErrInvalidToken, ErrInvalidUsernameAndPassword, 
 import bcrypt from 'bcrypt';
 import { v7 } from 'uuid';
 import { IUserUseCase } from '../interface';
+import { IEmailService } from '../infras/services/email.service';
 import {
   Status,
   User,
@@ -25,7 +26,11 @@ export class UserUseCase implements IUserUseCase {
   
   // Take the IRepository as the construction injection
   // So any class that inherits the IRepository will be used (Read and Write)
-  constructor(private readonly repository: IRepository<User, UserCondDTO, UserUpdateDTO>) {}
+  // Also inject IEmailService for sending transactional emails
+  constructor(
+    private readonly repository: IRepository<User, UserCondDTO, UserUpdateDTO>,
+    private readonly emailService: IEmailService
+  ) {}
 
   /**
    * Type guard that ensures a user exists and has ACTIVE status.
@@ -45,13 +50,12 @@ export class UserUseCase implements IUserUseCase {
    * this.requireActiveUser(user); // TypeScript now knows user is User, not null
    * // Safe to use user.id, user.email, etc.
    * ```
-   */
+   */   
   private requireActiveUser(user: User | null): asserts user is User {
-    if (!user || user.status !== Status.ACTIVE) {
+    if (!user || user.status != Status.ACTIVE){ 
       throw ErrUserInactivated;
     }
   }
-
   
   /**
    * Get user profile by ID.
@@ -90,6 +94,30 @@ export class UserUseCase implements IUserUseCase {
     this.requireActiveUser(user);
 
     return { sub: user.id, role: user.role };
+  }
+
+  /**
+   * Hashes a plain password and returns the hash and salt.
+   * Uses salt rounds: 8 for salt generation, 10 for hashing.
+   * 
+   * @param password - Plain text password from user input
+   * @returns Object containing hashed password and salt
+   */
+  async hashPassword(password: string): Promise<{ hash: string; salt: string }> {
+    const salt = await bcrypt.genSalt(8);
+    const hash = await bcrypt.hash(password, salt);
+    return { hash, salt };
+  }
+
+  /**
+   * Verifies a plain password against a stored hash.
+   * 
+   * @param plainPassword - Plain text password from user input
+   * @param storedHash - Stored password hash from database
+   * @returns True if password matches, false otherwise
+   */
+  async verifyPassword(plainPassword: string, storedHash: string): Promise<boolean> {
+    return bcrypt.compare(plainPassword, storedHash);
   }
  
   /**
@@ -141,42 +169,18 @@ export class UserUseCase implements IUserUseCase {
   }
 
   /**
-   * Hashes a plain password and returns the hash and salt.
-   * Uses salt rounds: 8 for salt generation, 10 for hashing.
-   * 
-   * @param password - Plain text password from user input
-   * @returns Object containing hashed password and salt
-   */
-  async hashPassword(password: string): Promise<{ hash: string; salt: string }> {
-    const salt = await bcrypt.genSalt(8);
-    const hash = await bcrypt.hash(password, salt);
-    return { hash, salt };
-  }
-
-  /**
-   * Verifies a plain password against a stored hash.
-   * 
-   * @param plainPassword - Plain text password from user input
-   * @param storedHash - Stored password hash from database
-   * @returns True if password matches, false otherwise
-   */
-  async verifyPassword(plainPassword: string, storedHash: string): Promise<boolean> {
-    return bcrypt.compare(plainPassword, storedHash);
-  }
-
-
-  /**
    * Registers a new user in the system.
    * 
    * Flow:
    * 1. Validate input DTO with Zod schema
    * 2. Check if username already exists - throw if exists
    * 3. Hash the password with bcrypt
-   * 4. Create new user object with default values (status: ACTIVE, role: USER)
+   * 4. Create new user object with status: PENDING (requires email verification)
    * 5. Insert into database
+   * 6. Generate verification token and send verification email
    * 
    * @param data - UserRegistrationDTO containing firstName, lastName, username, password
-   * @returns User ID of newly created user
+   * @returns Verification token to be sent to user's email
    * @throws ErrUsernameExisted - if username already exists
    */
   async register(data: UserRegistrationDTO): Promise<string> {
@@ -194,13 +198,14 @@ export class UserUseCase implements IUserUseCase {
     // Step 3: Hash password
     const { hash, salt } = await this.hashPassword(dto.password);
 
-    // Step 4: Create new user object
+    // Step 4: Create new user object with PENDING status (requires email verification)
     const newId = v7();
+    const verifyToken = await jwtProvider.generateToken({ sub: newId, role: UserRole.USER });
     const newUser: User = {
       ...dto,
       password: hash,
       id: newId,
-      status: Status.ACTIVE,
+      status: Status.PENDING,
       salt: salt,
       role: UserRole.USER,
       createdAt: new Date(),
@@ -210,7 +215,55 @@ export class UserUseCase implements IUserUseCase {
     // Step 5: Insert into database
     await this.repository.insert(newUser);
 
-    return newId;
+    // Step 6: Send verification email (non-blocking - don't block registration if email fails)
+    this.emailService.sendEmailVerifyAccount(dto.email, verifyToken).catch((err) => {
+      console.error(`[USER REGISTER] Failed to send verification email: ${err}`);
+    });
+
+    return verifyToken;
+  }
+
+  /**
+   * Verifies user's email address and sends welcome email.
+   * 
+   * Flow:
+   * 1. Extract userId from verification token
+   * 2. Find user by ID
+   * 3. Verify user status is PENDING (not already verified)
+   * 4. Update status to ACTIVE
+   * 5. Send welcome email
+   * 
+   * @param verifyToken - The verification token (JWT)
+   * @returns true if verification successful
+   * @throws ErrInvalidToken - if token is invalid
+   * @throws ErrNotFound - if user not found
+   */
+  async verifyEmail(verifyToken: string): Promise<boolean> {
+    const payload = await jwtProvider.verifyToken(verifyToken);
+    if (!payload) {
+      throw ErrInvalidToken;
+    }
+
+    const userId = payload.sub;
+    const user = await this.repository.findById(userId);
+    
+    if (!user) {
+      throw ErrNotFound;
+    }
+
+    if (user.status !== Status.PENDING) {
+      throw AppError.from(ErrUserInactivated, 400).withLog(
+        `Email verification failed: User '${userId}' is not in pending status`
+      );
+    }
+
+    // Update status to ACTIVE
+    await this.repository.update(userId, { status: Status.ACTIVE });
+
+    // Send welcome email
+    await this.emailService.sendEmailWelcome(user.email, user.username);
+
+    return true;
   }
 
   async create(data: UserRegistrationDTO): Promise<string> {
@@ -234,6 +287,7 @@ export class UserUseCase implements IUserUseCase {
    *
    * @param requester - The authenticated user making the request (from JWT)
    * @param data - UserUpdateProfileDTO containing fields to update
+   * @returns true if update successful
    * @returns true if update successful
    * @throws ErrUserInactivated - if user is not found or is not active
    */

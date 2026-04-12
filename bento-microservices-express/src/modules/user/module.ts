@@ -17,12 +17,12 @@ export const setupUserModule = (sctx: ServiceContext) => {
   const commandRepository = new PrismaUserCommandRepository();
 
   const repository = new PrismaUserRepository(queryRepository, commandRepository);
-  const useCase = new UserUseCase(repository);
+  const emailService = new EmailService();
+  const useCase = new UserUseCase(repository, emailService);
   const httpService = new UserHTTPService(useCase);
 
   // Password reset setup
   const resetTokenRepo = new PrismaResetTokenRepository();
-  const emailService = new EmailService();
   const passwordResetUsecase = new PasswordResetUsecase(resetTokenRepo, emailService, useCase);
   const passwordResetHttpService = new PasswordResetHttpService(passwordResetUsecase);
 
@@ -35,6 +35,7 @@ export const setupUserModule = (sctx: ServiceContext) => {
   const adminChecker = mdlFactory.allowRoles([UserRole.ADMIN]);
 
   router.post('/register', httpService.registerAPI.bind(httpService));
+  router.post('/verify-email', httpService.verifyEmailAPI.bind(httpService));
   router.post('/authenticate', httpService.loginAPI.bind(httpService));
   router.get('/profile', httpService.profileAPI.bind(httpService));
   router.patch('/profile', httpService.updateProfileAPI.bind(httpService));
