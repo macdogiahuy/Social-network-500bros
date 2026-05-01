@@ -1,0 +1,39 @@
+name: DAST Baseline
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 4 * * 2'
+
+jobs:
+  zap-baseline:
+    name: OWASP ZAP Baseline
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Resolve target URL
+        id: target
+        run: |
+          if [ -z "${{ secrets.STAGING_BASE_URL }}" ]; then
+            echo "has_target=false" >> "$GITHUB_OUTPUT"
+            echo "target_url=" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_target=true" >> "$GITHUB_OUTPUT"
+            echo "target_url=${{ secrets.STAGING_BASE_URL }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Skip scan when no staging URL is configured
+        if: steps.target.outputs.has_target != 'true'
+        run: echo "Skipping DAST scan because STAGING_BASE_URL secret is not configured."
+
+      - name: Run ZAP baseline
+        if: steps.target.outputs.has_target == 'true'
+        uses: zaproxy/action-baseline@v0.14.0
+        with:
+          target: ${{ steps.target.outputs.target_url }}
+          cmd_options: '-a'

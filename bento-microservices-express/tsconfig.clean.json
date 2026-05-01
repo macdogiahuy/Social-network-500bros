@@ -1,0 +1,37 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist-clean"
+  },
+  "include": [
+    "src/main.ts",
+    "src/infrastructure/**/*.ts",
+    "src/modules/post/**/*.ts",
+    "src/modules/user/**/*.ts",
+    "src/modules/comment/**/*.ts",
+    "src/modules/like/**/*.ts",
+    "src/modules/bookmark/**/*.ts",
+    "src/modules/media/**/*.ts",
+    "src/modules/notification/**/*.ts",
+    "src/modules/auth/**/*.ts",
+    "src/modules/messaging/**/*.ts",
+    "src/tests/**/*.ts",
+    "src/shared/constants/**/*.ts",
+    "src/shared/components/config.ts",
+    "src/shared/components/prisma/index.ts"
+  ],
+  "exclude": [
+    "src/modules/**/infras/**",
+    "src/modules/**/module.ts",
+    "src/modules/**/usecase/**",
+    "src/modules/**/interface/**",
+    "src/modules/media/infra/**",
+    "src/modules/media/module.ts",
+    "src/services/**",
+    "src/index.ts",
+    "src/app.ts",
+    "src/modules/conversation/**",
+    "src/modules/migration/**",
+    "prisma.config.ts"
+  ]
+}

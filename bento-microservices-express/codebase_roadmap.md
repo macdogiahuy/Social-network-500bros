@@ -65,7 +65,13 @@ module.ts           ← DI wiring: assembles repository + usecase + http-service
 
 | File | Purpose |
 |------|---------|
-| [module.ts](file:///home/vo/Documents/SideHustle/Social-network-500bros/bento-microservices-express/src/modules/user/module.ts) | Wires repository → usecase → http-service. Also sets up password reset + user stats sub-modules |
+| `application/use-cases/follow-user.usecase.ts` | Follow orchestration with cache warmup + domain event publish |
+| `application/use-cases/unfollow-user.usecase.ts` | Unfollow orchestration |
+| `application/use-cases/get-profile.usecase.ts` | Profile read flow |
+| `application/use-cases/update-profile.usecase.ts` | Profile update flow |
+| `infrastructure/repositories/prisma-user.repository.ts` | Prisma adapter for clean user repository contract |
+| `interfaces/http/follow.routes.ts` | `/v2/users/:userId/follow`, `/v2/users/:userId/unfollow` |
+| `interfaces/http/profile.routes.ts` | `/v2/users/profile` read + update |
 | [usecase/index.ts](file:///home/vo/Documents/SideHustle/Social-network-500bros/bento-microservices-express/src/modules/user/usecase/index.ts) | Register, login (bcrypt + JWT), profile CRUD, admin user management |
 | [usecase/password-reset.usecase.ts](file:///home/vo/Documents/SideHustle/Social-network-500bros/bento-microservices-express/src/modules/user/usecase/password-reset.usecase.ts) | Forgot/reset password flow with email service |
 | [usecase/user-stats.usecase.ts](file:///home/vo/Documents/SideHustle/Social-network-500bros/bento-microservices-express/src/modules/user/usecase/user-stats.usecase.ts) | User statistics endpoint |
@@ -73,6 +79,8 @@ module.ts           ← DI wiring: assembles repository + usecase + http-service
 | [user.controller.ts](file:///home/vo/Documents/SideHustle/Social-network-500bros/bento-microservices-express/src/modules/user/user.controller.ts) | ⚠️ **Old pattern** — direct Prisma calls in controller (avatar upload, profile, search users) |
 | [user.route.ts](file:///home/vo/Documents/SideHustle/Social-network-500bros/bento-microservices-express/src/modules/user/user.route.ts) | ⚠️ **Old pattern** — tsyringe DI, mounted at `/v1/users` in `app.ts` |
 | [infras/transport/redis-consumer.ts](file:///home/vo/Documents/SideHustle/Social-network-500bros/bento-microservices-express/src/modules/user/infras/transport/redis-consumer.ts) | Listens: `UserFollowed`, `UserUnfollowed`, `PostCreated`, `PostDeleted` → updates counters |
+
+> Legacy user module entrypoint `src/modules/user/module.ts` was removed from runtime wiring during clean-v2 cutover. Legacy subfolders are retained temporarily for phased decommission.
 
 **Routes:**
 
@@ -99,13 +107,23 @@ module.ts           ← DI wiring: assembles repository + usecase + http-service
 
 | File | Purpose |
 |------|---------|
-| [module.ts](file:///home/vo/Documents/SideHustle/Social-network-500bros/bento-microservices-express/src/modules/post/module.ts) | Wires repo + RPCs (topic, user, postLike, postSaved) → usecase → http-service + feed |
+| `application/use-cases/create-post.usecase.ts` | Create post + publish `post.created` domain event |
+| `application/use-cases/get-feed.usecase.ts` | Cache-first feed read flow (Redis + fallback) |
+| `application/use-cases/get-post-detail.usecase.ts` | Post detail read flow |
+| `application/use-cases/explore-posts.usecase.ts` | Explore/search posts |
+| `application/use-cases/update-post.usecase.ts` | Update post with ownership/admin checks |
+| `application/use-cases/delete-post.usecase.ts` | Delete post with ownership/admin checks |
+| `infrastructure/repositories/prisma-post.repository.ts` | Prisma adapters for post + follow read/write contracts |
+| `infrastructure/events/post-created-feed.projector.ts` | Fan-out on write to feed cache on `post.created` |
+| `interfaces/http/post.routes.ts` | `/v2` post/feed/explore endpoints |
 | [usecase/index.ts](file:///home/vo/Documents/SideHustle/Social-network-500bros/bento-microservices-express/src/modules/post/usecase/index.ts) | Create (validates topic+author via RPC), update (owner check), delete (publishes events) |
 | [usecase/feed.usecase.ts](file:///home/vo/Documents/SideHustle/Social-network-500bros/bento-microservices-express/src/modules/post/usecase/feed.usecase.ts) | Trending posts + latest-by-topic feed logic |
 | [infras/repository/mysql/index.ts](file:///home/vo/Documents/SideHustle/Social-network-500bros/bento-microservices-express/src/modules/post/infras/repository/mysql/index.ts) | Prisma CRUD + `increaseCount`/`decreaseCount` for counters |
 | [infras/repository/rpc/index.ts](file:///home/vo/Documents/SideHustle/Social-network-500bros/bento-microservices-express/src/modules/post/infras/repository/rpc/index.ts) | `TopicQueryRPC`, `PostLikedRPC`, `PostSavedRPC` — HTTP calls to other modules |
 | [infras/transport/http-service.ts](file:///home/vo/Documents/SideHustle/Social-network-500bros/bento-microservices-express/src/modules/post/infras/transport/http-service.ts) | REST handlers + hydrates author/topic/hasLiked/hasSaved per post |
 | [infras/transport/redis-consumer.ts](file:///home/vo/Documents/SideHustle/Social-network-500bros/bento-microservices-express/src/modules/post/infras/transport/redis-consumer.ts) | Listens: `PostLiked`, `PostUnliked`, `PostCommented`, `PostCommentDeleted` → updates counters |
+
+> Legacy post module entrypoint `src/modules/post/module.ts` was removed from runtime wiring during clean-v2 cutover. Legacy subfolders are retained temporarily for phased decommission.
 
 **Routes:**
 
@@ -127,10 +145,18 @@ module.ts           ← DI wiring: assembles repository + usecase + http-service
 
 | File | Purpose |
 |------|---------|
-| [module.ts](file:///home/vo/Documents/SideHustle/Social-network-500bros/bento-microservices-express/src/modules/comment/module.ts) | Wires repo + RPCs (post, user) → usecase → http-service |
+| `application/use-cases/create-comment.usecase.ts` | Create comment + publish domain event |
+| `application/use-cases/list-comments.usecase.ts` | List comments by post |
+| `application/use-cases/update-comment.usecase.ts` | Update comment with ownership/admin logic |
+| `application/use-cases/delete-comment.usecase.ts` | Delete comment with ownership/admin logic |
+| `domain/entities/comment.entity.ts` | Comment entity + invariants |
+| `infrastructure/repositories/prisma-comment.repository.ts` | Prisma adapter for clean comment repository |
+| `interfaces/http/comment.routes.ts` | `/v2` comment endpoints |
 | [usecase/comment.ts](file:///home/vo/Documents/SideHustle/Social-network-500bros/bento-microservices-express/src/modules/comment/usecase/comment.ts) | Create comment (validates post), like/dislike, reply (nested), delete |
 | [infras/repository/mysql/index.ts](file:///home/vo/Documents/SideHustle/Social-network-500bros/bento-microservices-express/src/modules/comment/infras/repository/mysql/index.ts) | Prisma CRUD + ⚠️ `$queryRawUnsafe` in `findByIds` (SQL injection risk) |
 | [infras/transport/redis-consumer.ts](file:///home/vo/Documents/SideHustle/Social-network-500bros/bento-microservices-express/src/modules/comment/infras/transport/redis-consumer.ts) | Listens: `CommentLiked`, `CommentUnliked` → updates `likedCount` |
+
+> Legacy comment module entrypoint `src/modules/comment/module.ts` was removed from runtime wiring during clean-v2 cutover. Legacy subfolders are retained temporarily for phased decommission.
 
 **Supports:** Top-level comments + nested replies (`parentId` self-reference).
 
@@ -140,8 +166,12 @@ module.ts           ← DI wiring: assembles repository + usecase + http-service
 
 | File | Purpose |
 |------|---------|
-| [module.ts](file:///home/vo/Documents/SideHustle/Social-network-500bros/bento-microservices-express/src/modules/comment-like/module.ts) | Wires repo + commentQueryRpc → usecase → http-service |
+| `usecase/index.ts` | Legacy comment-like use cases (v1 path) |
+| `infras/repository/mysql/index.ts` | Legacy comment-like persistence adapter |
+| `infras/transport/http-service.ts` | Legacy comment-like HTTP transport |
 | [usecase/index.ts](file:///home/vo/Documents/SideHustle/Social-network-500bros/bento-microservices-express/src/modules/comment-like/usecase/index.ts) | Like/unlike a comment (validates comment via RPC, publishes events) |
+
+> Legacy comment-like module entrypoint `src/modules/comment-like/module.ts` was removed from runtime wiring during clean-v2 cutover.
 
 ---
 
@@ -149,8 +179,12 @@ module.ts           ← DI wiring: assembles repository + usecase + http-service
 
 | File | Purpose |
 |------|---------|
-| [module.ts](file:///home/vo/Documents/SideHustle/Social-network-500bros/bento-microservices-express/src/modules/post-like/module.ts) | Wires repo + postQueryRpc → usecase → http-service |
+| `application/use-cases/like-post.usecase.ts` | Clean like-post orchestration + `post.liked` event publish |
+| `infrastructure/repositories/prisma-like.repository.ts` | Prisma adapter for like commands and read model |
+| `interfaces/http/like.routes.ts` | `/v2/posts/:postId/like` endpoint |
 | [usecase/index.ts](file:///home/vo/Documents/SideHustle/Social-network-500bros/bento-microservices-express/src/modules/post-like/usecase) | Like/unlike a post (validates post via RPC, publishes `PostLiked`/`PostUnliked` events) |
+
+> Legacy post-like module entrypoint `src/modules/post-like/module.ts` was removed from runtime wiring during clean-v2 cutover.
 
 ---
 
@@ -158,8 +192,14 @@ module.ts           ← DI wiring: assembles repository + usecase + http-service
 
 | File | Purpose |
 |------|---------|
-| [module.ts](file:///home/vo/Documents/SideHustle/Social-network-500bros/bento-microservices-express/src/modules/post-save/module.ts) | Wires repo + postRpc + userRpc + topicRpc → usecase → http-service |
+| `application/use-cases/save-post.usecase.ts` | Clean bookmark save orchestration |
+| `application/use-cases/unsave-post.usecase.ts` | Clean bookmark unsave orchestration |
+| `application/use-cases/list-saved-posts.usecase.ts` | Clean saved-posts listing flow |
+| `infrastructure/repositories/prisma-bookmark.repository.ts` | Prisma adapter for bookmarks |
+| `interfaces/http/bookmark.routes.ts` | `/v2/bookmarks` endpoints |
 | Usecase | Save/unsave a post (bookmark), list saved posts (hydrated with post/author/topic data) |
+
+> Legacy post-save module entrypoint `src/modules/post-save/module.ts` was removed from runtime wiring during clean-v2 cutover.
 
 ---
 
@@ -167,9 +207,14 @@ module.ts           ← DI wiring: assembles repository + usecase + http-service
 
 | File | Purpose |
 |------|---------|
-| [module.ts](file:///home/vo/Documents/SideHustle/Social-network-500bros/bento-microservices-express/src/modules/following/module.ts) | Wires repo + userRpc → usecase → http-service |
+| `application/use-cases/follow-user.usecase.ts` | Clean follow orchestration + event publish |
+| `application/use-cases/unfollow-user.usecase.ts` | Clean unfollow orchestration |
+| `interfaces/http/follow.routes.ts` | `/v2/users/:userId/follow` and `/v2/users/:userId/unfollow` |
+| `infrastructure/repositories/prisma-post.repository.ts` | Follow persistence adapter used by clean follow use cases |
 | [usecase/index.ts](file:///home/vo/Documents/SideHustle/Social-network-500bros/bento-microservices-express/src/modules/following/usecase/index.ts) | Follow/unfollow user (publishes `UserFollowed`/`UserUnfollowed` events) |
 | [infras/repository/mysql/index.ts](file:///home/vo/Documents/SideHustle/Social-network-500bros/bento-microservices-express/src/modules/following/infras/repository/mysql/index.ts) | Prisma: composite key `followingId_followerId`, `whoAmIFollowing` batch check |
+
+> Legacy following module entrypoint `src/modules/following/module.ts` was removed from runtime wiring during clean-v2 cutover.
 
 ---
 
@@ -177,9 +222,13 @@ module.ts           ← DI wiring: assembles repository + usecase + http-service
 
 | File | Purpose |
 |------|---------|
-| [module.ts](file:///home/vo/Documents/SideHustle/Social-network-500bros/bento-microservices-express/src/modules/topic/module.ts) | Wires repo → usecase → http-service |
+| `infras/repository/index.ts` | Legacy topic persistence adapter (pre-clean) |
+| `usecase/index.ts` | Legacy CRUD topic use cases (pre-clean) |
+| `infras/transport/http-service.ts` | Legacy `/v1` topic transport layer |
 | Usecase | CRUD topics |
 | [infras/transport/redis-consumer.ts](file:///home/vo/Documents/SideHustle/Social-network-500bros/bento-microservices-express/src/modules/topic/infras/transport/redis-consumer.ts) | Listens: `PostCreated`, `PostDeleted` → updates `postCount` |
+
+> Legacy topic module entrypoint `src/modules/topic/module.ts` was removed from runtime wiring during clean-v2 cutover.
 
 ---
 
@@ -187,9 +236,13 @@ module.ts           ← DI wiring: assembles repository + usecase + http-service
 
 | File | Purpose |
 |------|---------|
-| [module.ts](file:///home/vo/Documents/SideHustle/Social-network-500bros/bento-microservices-express/src/modules/notification/module.ts) | Wires repo + userRpc → usecase → http + Redis consumer |
-| [infras/transport/redis-consumer.ts](file:///home/vo/Documents/SideHustle/Social-network-500bros/bento-microservices-express/src/modules/notification/infras/transport/redis-consumer.ts) | Listens: `PostLiked`, `PostCommented`, `UserFollowed` → generates + stores notifications, pushes via Socket.IO |
-| Http-service | List notifications, mark as read |
+| `application/use-cases/*` | Create/list/mark-read notification flows (Clean Application layer) |
+| `domain/entities/notification.entity.ts` | Notification entity with validation + rehydrate support |
+| `infrastructure/repositories/prisma-notification.repository.ts` | Prisma persistence adapter for notification aggregate |
+| `infrastructure/events/notification.projector.ts` | Subscribes domain events (`user.followed`, `post.liked`, `comment.created`, ...) and projects notifications |
+| `interfaces/http/notification.routes.ts` | `/v2/notifications` APIs (list, mark-read, mark-all-read) |
+
+> Legacy notification files (`module.ts`, `infras/*`, `interface/*`, `model/*`, `usecase/*`, `src/services/notification/index.ts`) were removed during clean-v2 cutover cleanup.
 
 ---
 
@@ -202,6 +255,7 @@ module.ts           ← DI wiring: assembles repository + usecase + http-service
 | [conversation.service.ts](file:///home/vo/Documents/SideHustle/Social-network-500bros/bento-microservices-express/src/modules/conversation/conversation.service.ts) | Partial service layer (find/create conversations only) |
 
 > ⚠️ References `prisma.conversation`, `prisma.message`, `prisma.conversationParticipant`, `prisma.messageReaction` — **models NOT in `schema.prisma`**. These likely come from a separate schema or need to be added.
+> Legacy conversation routes were removed from monolith `src/index.ts` boot path; conversation runtime remains in dedicated `src/services/chat/index.ts`.
 
 ---
 

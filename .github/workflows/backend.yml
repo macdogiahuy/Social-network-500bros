@@ -16,8 +16,8 @@ defaults:
     working-directory: bento-microservices-express
 
 jobs:
-  lint-and-build:
-    name: Lint & Build
+  quality-gates:
+    name: Build & Test (Clean)
     runs-on: ubuntu-latest
 
     steps:
@@ -37,12 +37,44 @@ jobs:
         run: npx prisma generate
 
       - name: Build TypeScript
-        run: yarn build
+        run: yarn build:clean
+
+      - name: Run clean test suite
+        run: yarn test:clean
+
+  security-gates:
+    name: Security Gates
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'yarn'
+          cache-dependency-path: bento-microservices-express/yarn.lock
+
+      - name: Install dependencies
+        working-directory: bento-microservices-express
+        run: yarn install --frozen-lockfile
+
+      - name: Secrets scan (gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Dependency audit (high+)
+        working-directory: bento-microservices-express
+        run: yarn audit --level high
 
   docker-build:
     name: Docker Build Check
     runs-on: ubuntu-latest
-    needs: lint-and-build
+    needs: [quality-gates, security-gates]
 
     steps:
       - uses: actions/checkout@v4

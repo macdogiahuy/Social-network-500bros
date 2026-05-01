@@ -13,12 +13,17 @@ if (!jwtSecret) {
 }
 
 const defaultServiceUrl = `http://localhost:${port}/v1`;
+const corsAllowedOrigins = (process.env.CORS_ALLOWED_ORIGINS || 'http://localhost:3000')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter((origin) => origin.length > 0);
 
 export const config = {
   envName: process.env.NODE_ENV,
   port,
   host,
   jwtSecret,
+  corsAllowedOrigins,
   rpc: {
     jwtSecret,
     introspectUrl: process.env.VERIFY_TOKEN_URL || `http://localhost:${port}/v1/rpc/introspect`,

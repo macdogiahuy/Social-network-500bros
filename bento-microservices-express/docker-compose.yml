@@ -104,28 +104,6 @@ services:
   #   networks:
   #     - social
 
-  # notification-service:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile
-  #     args:
-  #       SERVICE_ENTRY: src/services/notification/index.ts
-  #   container_name: notification-service
-  #   restart: always
-  #   ports:
-  #     - '3004:3004'
-  #   env_file:
-  #     - .env
-  #   environment:
-  #     - NOTIFICATION_SERVICE_PORT=3004
-  #   depends_on:
-  #     mysql:
-  #       condition: service_healthy
-  #     redis:
-  #       condition: service_started
-  #   networks:
-  #     - social
-
 networks:
   social:
 
