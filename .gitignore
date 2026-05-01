@@ -43,3 +43,6 @@ __MACOSX/
 # Temporary files
 *.temp
 **/temp/
+
+# Local agent/session artifacts
+.continue/
